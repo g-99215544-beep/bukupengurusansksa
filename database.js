@@ -1,10 +1,9 @@
-// Reader Buku Pengurusan (PDF.js) - Lompat page confirm
+// Reader Buku Pengurusan (PDF.js) - UI Mobile kemas (drawer TOC + tools toggle)
 // Fail PDF mesti di root repo: BUKU_PENGURUSAN_2021.pdf
-// PDF.js akan diload oleh index.html (robust loader).
 
 const PDF_URL = "./BUKU_PENGURUSAN_2021.pdf";
 
-// TOC (boleh edit jika mahu)
+// TOC (boleh edit)
 const TOC = [
   { group: "Maklumat Umum", items: [
     { title: "Isi Kandungan", start: 1, end: 1 },
@@ -69,10 +68,16 @@ const QUICK = [
 ];
 
 const els = {
+  btnToc: document.getElementById("btnToc"),
+  drawer: document.getElementById("drawer"),
+  backdrop: document.getElementById("drawerBackdrop"),
+  toolPanel: document.getElementById("toolPanel"),
+  btnTools: document.getElementById("btnTools"),
+
   tabs: Array.from(document.querySelectorAll(".tab")),
+  status: document.getElementById("status"),
   tabToc: document.getElementById("tab-toc"),
   tabPantas: document.getElementById("tab-pantas"),
-  status: document.getElementById("status"),
   quickLinks: document.getElementById("quickLinks"),
 
   canvas: document.getElementById("pdfCanvas"),
@@ -97,6 +102,28 @@ let currentPage = 1;
 let zoomPct = 110;
 let renderTask = null;
 
+function isMobile(){
+  return window.matchMedia && window.matchMedia("(max-width: 1000px)").matches;
+}
+
+function setDrawerTop(){
+  // Align drawer below the sticky header (dynamic)
+  const header = document.querySelector("header");
+  if (!header || !els.drawer) return;
+  const rect = header.getBoundingClientRect();
+  els.drawer.style.top = `${Math.ceil(rect.height)}px`;
+}
+
+function openDrawer(){
+  document.body.classList.add("drawer-open");
+}
+function closeDrawer(){
+  document.body.classList.remove("drawer-open");
+}
+function toggleDrawer(){
+  document.body.classList.toggle("drawer-open");
+}
+
 function setTab(name){
   els.tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
   document.getElementById("tab-toc").classList.toggle("hidden", name !== "toc");
@@ -104,7 +131,7 @@ function setTab(name){
 }
 els.tabs.forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 
-function setStatus(txt){ els.status.textContent = txt; }
+function setStatus(txt){ if (els.status) els.status.textContent = txt; }
 function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
 
 async function renderPage(pageNum){
@@ -119,7 +146,6 @@ async function renderPage(pageNum){
   }
 
   const page = await pdfDoc.getPage(currentPage);
-
   const scale = (zoomPct / 100);
   const viewport = page.getViewport({ scale });
 
@@ -155,7 +181,7 @@ function updateZoom(newZoom){
 function fitToWidth(){
   if (!pdfDoc) return;
   pdfDoc.getPage(currentPage).then(page => {
-    const wrapW = els.canvasWrap.clientWidth - 24;
+    const wrapW = els.canvasWrap.clientWidth - 24; // padding
     const viewport1 = page.getViewport({ scale: 1 });
     const fitScale = wrapW / viewport1.width;
     const fitZoom = clamp(Math.floor(fitScale * 100), 60, 200);
@@ -190,6 +216,9 @@ function buildTocUI(){
         document.querySelectorAll(".tocItem").forEach(x => x.classList.remove("active"));
         row.classList.add("active");
         gotoPage(it.start);
+
+        // Mobile: close drawer after choose
+        if (isMobile()) closeDrawer();
       });
       body.appendChild(row);
     });
@@ -222,6 +251,7 @@ function buildQuickLinks(){
     row.addEventListener("click", () => {
       setTab("toc");
       gotoPage(q.page);
+      if (isMobile()) closeDrawer();
     });
     els.quickLinks.appendChild(row);
   });
@@ -236,11 +266,8 @@ async function loadPdf(){
   const pdfjsLib = window.pdfjsLib;
   if (!pdfjsLib) throw new Error("pdfjsLib not loaded");
 
-  // Worker from loader
   const workerSrc = window.pdfjsWorkerSrc;
-  if (workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-  }
+  if (workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
   const loadingTask = pdfjsLib.getDocument({ url: PDF_URL, withCredentials: false });
   pdfDoc = await loadingTask.promise;
@@ -248,13 +275,51 @@ async function loadPdf(){
   els.pageNote.textContent = `/ ${pdfDoc.numPages}`;
   setStatus("Sedia");
   gotoPage(1);
+
+  // Mobile: auto fit width supaya besar
+  if (isMobile()) {
+    setTimeout(() => fitToWidth(), 200);
+  }
 }
 
 function wireUI(){
+  // Drawer
+  setDrawerTop();
+  window.addEventListener("resize", () => {
+    setDrawerTop();
+    // refresh render to reduce blur
+    renderPage(currentPage);
+    if (isMobile()) {
+      // optional: keep fit on rotate
+      setTimeout(() => fitToWidth(), 180);
+    }
+  });
+
+  els.btnToc.addEventListener("click", () => {
+    if (isMobile()) toggleDrawer();
+    else openDrawer();
+  });
+
+  els.backdrop.addEventListener("click", closeDrawer);
+
+  // Close drawer on ESC (desktop)
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+    if (e.key === "ArrowLeft") gotoPage(currentPage - 1);
+    if (e.key === "ArrowRight") gotoPage(currentPage + 1);
+  });
+
+  // Tools toggle (mobile)
+  els.btnTools.addEventListener("click", () => {
+    els.toolPanel.classList.toggle("open");
+  });
+
+  // Page controls
   els.prev.addEventListener("click", () => gotoPage(currentPage - 1));
   els.next.addEventListener("click", () => gotoPage(currentPage + 1));
   els.pageNum.addEventListener("change", () => gotoPage(els.pageNum.value));
 
+  // Zoom
   els.zoom.addEventListener("input", () => updateZoom(els.zoom.value));
   els.zoomIn.addEventListener("click", () => updateZoom(zoomPct + 10));
   els.zoomOut.addEventListener("click", () => updateZoom(zoomPct - 10));
@@ -264,13 +329,6 @@ function wireUI(){
   });
 
   els.btnFit.addEventListener("click", fitToWidth);
-
-  window.addEventListener("resize", () => renderPage(currentPage));
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") gotoPage(currentPage - 1);
-    if (e.key === "ArrowRight") gotoPage(currentPage + 1);
-  });
 }
 
 wireUI();
