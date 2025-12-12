@@ -45,6 +45,7 @@
     .btn:active{transform:translateY(1px)}
     .btn.primary{border-color: rgba(37,99,235,.25); background: rgba(37,99,235,.08)}
     .btn.small{padding:7px 9px;border-radius:10px;font-size:13px}
+    .btn.ghost{background:transparent; box-shadow:none}
     .pill{
       display:flex;align-items:center;gap:8px;
       padding:8px 10px;border-radius:999px;border:1px solid var(--line);
@@ -101,7 +102,9 @@
       padding:7px 9px;border-radius:999px;border:1px solid var(--line);
       background: var(--panel2);color: var(--text);
       font-size:12px;font-weight:700;margin: 0 6px 6px 0;
+      cursor:pointer;
     }
+    .chip:hover{border-color: rgba(17,24,39,.18)}
     .teacherCard{border:1px solid var(--line);border-radius:14px;background: var(--panel);padding: 10px}
     .teacherName{font-weight:900;font-size:14px}
     .teacherHint{color:var(--muted);font-size:12px;margin-top:4px}
@@ -112,6 +115,19 @@
     }
     .teacherBtn:hover{background: rgba(17,24,39,.03); border-color: rgba(17,24,39,.06)}
     .teacherBtn small{display:block;color:var(--muted);font-weight:700;margin-top:2px}
+
+    .miniRow{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0 10px}
+    .linkBtn{
+      border:1px solid var(--line);
+      background:transparent;
+      padding:7px 9px;
+      border-radius:999px;
+      font-size:12px;
+      cursor:pointer;
+      color:var(--text);
+    }
+    .linkBtn:hover{background: rgba(17,24,39,.03)}
+    .subBadge{font-size:11px;color:var(--muted)}
 
     .viewer{min-height:0;border:1px solid var(--line);border-radius: var(--radius);background:var(--panel);box-shadow: var(--shadow);overflow:hidden;display:flex;flex-direction:column}
     .viewerTop{padding:8px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:rgba(247,247,248,.7)}
@@ -170,9 +186,17 @@
           </div>
 
           <div id="tab-guru" class="hidden">
+            <div class="miniRow">
+              <div>
+                <div style="font-weight:900;font-size:13px">Senarai tugas guru</div>
+                <div class="subBadge" id="teacherIndexStatus">Index: belum siap</div>
+              </div>
+              <button id="btnReindex" class="linkBtn" title="Imbas semula PDF (ambil masa sedikit)">Imbas</button>
+            </div>
+
             <div class="field" title="Cari nama guru">
               <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Cari</span>
-              <input id="teacherSearch" type="text" placeholder="Contoh: Cikgu Abu" />
+              <input id="teacherSearch" type="text" placeholder="Contoh: Pn. Siti / Cikgu Abu" />
             </div>
 
             <div id="teacherResults" class="teacherList"></div>
@@ -181,14 +205,15 @@
 
             <div class="teacherCard">
               <div class="teacherName" id="teacherName">Pilih nama guru</div>
-              <div class="teacherHint" id="teacherHint">Tugas akan dipaparkan di sini.</div>
+              <div class="teacherHint" id="teacherHint">Klik tugas untuk lompat ke muka surat berkaitan.</div>
               <div style="height:8px"></div>
               <div id="teacherChips"></div>
             </div>
 
             <div style="height:10px"></div>
             <div class="teacherHint">
-              Tip: Data guru boleh edit dalam <b>database.js</b> (bahagian <b>TEACHERS</b>).
+              Nota: Sistem akan <b>imbas teks PDF</b> dan buat senarai automatik. Jika ada nama/tugas tak tepat,
+              boleh tambah “manual override” dalam <b>database.js</b>.
             </div>
           </div>
         </div>
