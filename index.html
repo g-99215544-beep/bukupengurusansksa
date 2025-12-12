@@ -3,270 +3,219 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Reader Buku Pengurusan (PDF.js)</title>
-  <meta name="theme-color" content="#0b1220" />
+  <title>bukupengurusansriaman</title>
+  <meta name="theme-color" content="#f3f4f6" />
   <style>
     :root{
-      --bg:#0b1220; --panel:#0f1a33; --panel2:#0b1530; --text:#e8eefc; --muted:#9fb2d9;
-      --accent:#4ea1ff; --danger:#ff5a6a; --ok:#43d19e; --line:rgba(255,255,255,.09);
-      --shadow: 0 10px 30px rgba(0,0,0,.25);
-      --radius: 14px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --bg:#f3f4f6; --panel:#ffffff; --panel2:#f7f7f8;
+      --text:#111827; --muted:#6b7280; --accent:#2563eb;
+      --line: rgba(17,24,39,.12); --shadow: 0 8px 18px rgba(17,24,39,.08);
+      --radius: 14px; --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0;
-      background:linear-gradient(180deg,#070b14, #0b1220 40%, #070b14);
-      color:var(--text);
-      font-family:var(--font);
-      overflow-x:hidden;
-    }
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
     .app{height:100%;display:flex;flex-direction:column}
+
     header{
-      display:flex;gap:12px;align-items:center;justify-content:space-between;
-      padding:14px 16px;border-bottom:1px solid var(--line);
-      background:rgba(11,18,32,.92);backdrop-filter: blur(8px);
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding:8px 12px;border-bottom:1px solid var(--line);
+      background:rgba(255,255,255,.92);backdrop-filter: blur(8px);
       position:sticky;top:0;z-index:60;
     }
-    .brand{display:flex;align-items:center;gap:10px;min-width: 240px;}
+    .brand{display:flex;align-items:center;gap:10px;min-width:0}
     .logo{
-      width:34px;height:34px;border-radius:10px;background:
-        radial-gradient(circle at 30% 30%, rgba(78,161,255,.9), rgba(78,161,255,.1) 55%),
-        linear-gradient(135deg, rgba(67,209,158,.45), rgba(255,90,106,.25));
-      box-shadow: var(--shadow);
-      border:1px solid rgba(255,255,255,.10);
-      flex:0 0 auto;
+      width:24px;height:24px;border-radius:7px;
+      background: linear-gradient(135deg, rgba(37,99,235,.20), rgba(37,99,235,.06));
+      border:1px solid rgba(37,99,235,.22);
+      box-shadow: var(--shadow);flex:0 0 auto;
     }
-    .titleWrap{display:flex;flex-direction:column;line-height:1.1}
-    .title{font-weight:800;font-size:15px}
-    .subtitle{font-size:12px;color:var(--muted)}
-    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
+    .title{
+      font-weight:800;font-size:14px;letter-spacing:.2px;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      max-width: 62vw;
+    }
+    .controls{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:0 0 auto}
     .btn{
-      border:1px solid var(--line);
-      background:rgba(15,26,51,.6);
-      color:var(--text);
-      padding:10px 12px;border-radius:12px;
-      cursor:pointer;
-      display:inline-flex;align-items:center;gap:8px;
-      transition:.15s transform, .15s background;
-      user-select:none;
-      font-size:13px;
-      white-space:nowrap;
+      border:1px solid var(--line);background:var(--panel);color:var(--text);
+      padding:8px 10px;border-radius:12px;cursor:pointer;
+      display:inline-flex;align-items:center;gap:8px;user-select:none;
+      font-size:13px;white-space:nowrap;box-shadow: 0 2px 8px rgba(17,24,39,.04);
     }
-    .btn:hover{transform:translateY(-1px); background:rgba(15,26,51,.9)}
-    .btn:active{transform:translateY(0px)}
-    .btn.small{padding:8px 10px;border-radius:10px}
-    .btn.primary{background:rgba(78,161,255,.18);border-color:rgba(78,161,255,.35)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{border-color: rgba(37,99,235,.25); background: rgba(37,99,235,.08)}
+    .btn.small{padding:7px 9px;border-radius:10px;font-size:13px}
     .pill{
       display:flex;align-items:center;gap:8px;
-      padding:10px 12px;border-radius:999px;border:1px solid var(--line);
-      background:rgba(15,26,51,.6);
+      padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+      background:var(--panel);box-shadow: 0 2px 8px rgba(17,24,39,.04);
     }
-    input[type="text"]{
-      border:0;outline:0;background:transparent;color:var(--text);font-size:14px;
-    }
-    .badge{
-      font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
-      background:rgba(15,26,51,.55);white-space:nowrap
-    }
+    input[type="text"]{border:0;outline:0;background:transparent;color:var(--text);font-size:14px}
+    .badge{font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--panel2);white-space:nowrap}
 
-    /* Layout */
-    .main{
-      flex:1;
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:14px;
-      padding:14px;
-      min-height:0;
-    }
-    aside{
-      min-height:0;
-      border:1px solid var(--line); border-radius: var(--radius);
-      background:rgba(15,26,51,.62); box-shadow: var(--shadow);
-      overflow:hidden; display:flex; flex-direction:column;
-    }
-    .asideTop{
-      padding:12px 12px 10px;border-bottom:1px solid var(--line);
-      display:flex;gap:10px;align-items:center;justify-content:space-between
-    }
-    .tabs{display:flex;gap:8px;align-items:center}
-    .tab{
-      padding:8px 10px;border-radius:10px;border:1px solid var(--line);
-      background:rgba(11,21,48,.55);cursor:pointer;font-size:13px;color:var(--muted);
-    }
-    .tab.active{background:rgba(78,161,255,.16);border-color:rgba(78,161,255,.35);color:var(--text)}
-    .asideBody{flex:1;min-height:0;overflow:auto;padding:10px}
-    .section{
-      border:1px solid var(--line);border-radius:14px;background:rgba(11,21,48,.45);
-      overflow:hidden;margin-bottom:10px;
-    }
-    .section > button{
-      width:100%;text-align:left;border:0;background:transparent;color:var(--text);
-      padding:12px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;
-      font-weight:700
-    }
-    .section > button .muted{color:var(--muted);font-weight:600;font-size:12px}
-    .sectionBody{padding:0 6px 8px 6px}
-    .tocItem{
-      padding:10px 10px;border-radius:12px;cursor:pointer;display:flex;gap:10px;justify-content:space-between;align-items:flex-start;
-      border:1px solid transparent;
-    }
-    .tocItem:hover{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.06)}
-    .tocItem.active{background:rgba(78,161,255,.14);border-color:rgba(78,161,255,.28)}
-    .tocItem .name{font-size:13px;font-weight:700}
-    .tocItem .meta{font-size:12px;color:var(--muted)}
+    .main{flex:1;display:grid;grid-template-columns: 360px 1fr;gap:12px;padding:12px;min-height:0}
 
-    .viewer{
-      min-height:0;
-      border:1px solid var(--line);border-radius: var(--radius);
-      background:rgba(15,26,51,.62); box-shadow: var(--shadow);
-      overflow:hidden; display:flex; flex-direction:column;
-    }
-    .viewerTop{
-      padding:10px 12px;border-bottom:1px solid var(--line);
-      display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
-    }
-    .viewerTop .left, .viewerTop .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .stat{font-size:12px;color:var(--muted)}
-    .viewerBody{flex:1;min-height:0;overflow:auto;padding:12px}
-    .canvasWrap{
-      width:100%;
-      min-height:100%;
-      display:flex;
-      justify-content:center;
-      align-items:flex-start;
-      border-radius:16px;
-      overflow:auto;
-      border:1px solid rgba(255,255,255,.07);
-      background:rgba(0,0,0,.22);
-      padding:12px;
-    }
-    canvas{background:#fff;border-radius:10px;box-shadow: 0 10px 22px rgba(0,0,0,.25)}
-    .hidden{display:none !important}
-
-    /* Mobile drawer for TOC */
     #drawerBackdrop{
-      position:fixed;
-      inset:0;
-      background:rgba(0,0,0,.45);
-      z-index:55;
-      opacity:0;
-      pointer-events:none;
-      transition: .18s opacity;
+      position:fixed;inset:0;background:rgba(17,24,39,.35);
+      z-index:55;opacity:0;pointer-events:none;transition:.18s opacity;
     }
-    body.drawer-open #drawerBackdrop{
-      opacity:1;
-      pointer-events:auto;
-    }
+    body.drawer-open #drawerBackdrop{opacity:1;pointer-events:auto}
+
     aside.drawer{
-      position:fixed;
-      top:64px; /* header height approx, will be corrected in JS */
-      left:0;
-      bottom:0;
-      width:min(360px, 88vw);
-      border-radius: 0 16px 16px 0;
-      transform: translateX(-105%);
-      transition: .18s transform;
+      border-right:1px solid var(--line);background:var(--panel);box-shadow: var(--shadow);
+      overflow:hidden;display:flex;flex-direction:column;
+      position:fixed;top:52px;left:0;bottom:0;width:min(360px, 88vw);
+      border-radius: 0 16px 16px 0;transform: translateX(-105%);transition:.18s transform;
       z-index:56;
     }
-    body.drawer-open aside.drawer{
-      transform: translateX(0);
-    }
+    body.drawer-open aside.drawer{transform: translateX(0)}
+    .asideTop{padding:10px 10px 8px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .tabs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .tab{padding:7px 9px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);cursor:pointer;font-size:13px;color:var(--muted)}
+    .tab.active{background:rgba(37,99,235,.08);border-color:rgba(37,99,235,.20);color:var(--text)}
+    .asideBody{flex:1;min-height:0;overflow:auto;padding:10px}
+    .section{border:1px solid var(--line);border-radius:14px;background:var(--panel);overflow:hidden;margin-bottom:10px}
+    .section > button{width:100%;text-align:left;border:0;background:transparent;color:var(--text);padding:10px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:13px}
+    .section > button .muted{color:var(--muted);font-weight:700;font-size:12px}
+    .sectionBody{padding:0 6px 8px 6px}
+    .tocItem{padding:9px 9px;border-radius:12px;cursor:pointer;display:flex;gap:10px;justify-content:space-between;align-items:flex-start;border:1px solid transparent}
+    .tocItem:hover{background:rgba(17,24,39,.03);border-color:rgba(17,24,39,.06)}
+    .tocItem.active{background:rgba(37,99,235,.07);border-color:rgba(37,99,235,.16)}
+    .tocItem .name{font-size:13px;font-weight:800}
+    .tocItem .meta{font-size:12px;color:var(--muted)}
 
-    /* Responsive tweaks */
-    @media (max-width: 1000px){
-      .main{grid-template-columns: 1fr; padding:10px}
-      /* Keep viewer full width; aside becomes drawer overlay */
-      aside{display:none;}
-      aside.drawer{display:flex;}
-      .brand{min-width:auto}
+    /* Guru panel */
+    .field{
+      border:1px solid var(--line);
+      background: var(--panel2);
+      border-radius: 12px;
+      padding: 10px 10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:10px;
     }
-    @media (max-width: 600px){
-      header{padding:10px 12px}
-      .subtitle{display:none}
-      .btn{padding:9px 10px}
-      .viewerBody{padding:10px}
-      .canvasWrap{padding:10px}
-      /* Compact controls: hide tools panel by default */
-      #btnTools{display:inline-flex}
+    .field input{width:100%;font-size:14px}
+    .chip{
+      display:inline-flex;align-items:center;
+      padding:7px 9px;border-radius:999px;border:1px solid var(--line);
+      background: var(--panel2);color: var(--text);
+      font-size:12px;font-weight:700;margin: 0 6px 6px 0;
+    }
+    .teacherCard{border:1px solid var(--line);border-radius:14px;background: var(--panel);padding: 10px}
+    .teacherName{font-weight:900;font-size:14px}
+    .teacherHint{color:var(--muted);font-size:12px;margin-top:4px}
+    .teacherList{display:flex;flex-direction:column;gap:8px}
+    .teacherBtn{
+      text-align:left;border:1px solid transparent;background: transparent;
+      padding:10px 10px;border-radius:12px;cursor:pointer;font-weight:800;color: var(--text);
+    }
+    .teacherBtn:hover{background: rgba(17,24,39,.03); border-color: rgba(17,24,39,.06)}
+    .teacherBtn small{display:block;color:var(--muted);font-weight:700;margin-top:2px}
+
+    .viewer{min-height:0;border:1px solid var(--line);border-radius: var(--radius);background:var(--panel);box-shadow: var(--shadow);overflow:hidden;display:flex;flex-direction:column}
+    .viewerTop{padding:8px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:rgba(247,247,248,.7)}
+    .viewerTop .left,.viewerTop .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .viewerBody{flex:1;min-height:0;overflow:auto;padding:10px;background:var(--panel)}
+    .canvasWrap{width:100%;min-height:100%;display:flex;justify-content:center;align-items:flex-start;border-radius:16px;overflow:auto;border:1px solid rgba(17,24,39,.08);background:#eef1f5;padding:10px}
+    canvas{background:#fff;border-radius:10px;box-shadow: 0 10px 22px rgba(17,24,39,.12)}
+    .hidden{display:none !important}
+
+    #toolPanel{display:flex}
+    @media (max-width: 900px){
+      .main{grid-template-columns: 1fr; padding:10px}
       #toolPanel{display:none}
       #toolPanel.open{display:flex}
-      /* reduce clutter */
-      #libStatus{display:none}
+      #btnTools{display:inline-flex}
     }
-    @media (min-width: 601px){
+    @media (min-width: 901px){
       #btnTools{display:none}
       #toolPanel{display:flex}
     }
   </style>
 </head>
-
 <body>
   <div class="app">
     <header>
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
-        <div class="titleWrap">
-          <div class="title">Reader Buku Pengurusan (PDF.js)</div>
-          <div class="subtitle">Klik isi kandungan untuk lompat tepat ke muka surat</div>
-        </div>
+        <div class="title">bukupengurusansriaman</div>
       </div>
-
       <div class="controls">
-        <button id="btnToc" class="btn">Isi Kandungan</button>
-        <span id="libStatus" class="badge">Memuatkan PDF.js…</span>
-        <button id="btnOpenPdf" class="btn">Buka PDF</button>
-        <button id="btnFit" class="btn">Fit</button>
+        <button id="btnToc" class="btn primary">Isi Kandungan</button>
       </div>
     </header>
 
     <div id="drawerBackdrop" aria-hidden="true"></div>
 
     <div class="main">
-      <aside class="drawer" id="drawer">
+      <aside class="drawer" id="drawer" aria-label="Isi kandungan">
         <div class="asideTop">
           <div class="tabs">
-            <button class="tab active" data-tab="toc">Isi Kandungan</button>
+            <button class="tab active" data-tab="toc">Isi</button>
             <button class="tab" data-tab="pantas">Pantas</button>
+            <button class="tab" data-tab="guru">Guru</button>
           </div>
           <span id="status" class="badge">Loading…</span>
         </div>
 
         <div class="asideBody">
           <div id="tab-toc"></div>
+
           <div id="tab-pantas" class="hidden">
             <div class="section">
               <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
               <div class="sectionBody" id="quickLinks"></div>
             </div>
           </div>
+
+          <div id="tab-guru" class="hidden">
+            <div class="field" title="Cari nama guru">
+              <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Cari</span>
+              <input id="teacherSearch" type="text" placeholder="Contoh: Cikgu Abu" />
+            </div>
+
+            <div id="teacherResults" class="teacherList"></div>
+
+            <div style="height:10px"></div>
+
+            <div class="teacherCard">
+              <div class="teacherName" id="teacherName">Pilih nama guru</div>
+              <div class="teacherHint" id="teacherHint">Tugas akan dipaparkan di sini.</div>
+              <div style="height:8px"></div>
+              <div id="teacherChips"></div>
+            </div>
+
+            <div style="height:10px"></div>
+            <div class="teacherHint">
+              Tip: Data guru boleh edit dalam <b>database.js</b> (bahagian <b>TEACHERS</b>).
+            </div>
+          </div>
         </div>
       </aside>
 
-      <section class="viewer">
+      <section class="viewer" aria-label="Viewer PDF">
         <div class="viewerTop">
           <div class="left">
-            <button id="prev" class="btn small">◀</button>
-            <button id="next" class="btn small">▶</button>
-
-            <div class="pill">
-              <span class="stat">Muka</span>
+            <button id="prev" class="btn small" aria-label="Sebelum">◀</button>
+            <button id="next" class="btn small" aria-label="Seterus">▶</button>
+            <div class="pill" aria-label="Muka surat">
+              <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Muka</span>
               <input id="pageNum" inputmode="numeric" style="width:64px" />
-              <span class="stat" id="pageNote">/ -</span>
+              <span class="badge" id="pageNote">/ -</span>
             </div>
           </div>
 
           <div class="right">
-            <button id="btnTools" class="btn small">Alat</button>
-            <div id="toolPanel" class="right">
-              <button id="zoomOut" class="btn small">-</button>
+            <button id="btnTools" class="btn small" aria-label="Buka alat">Alat</button>
+            <div id="toolPanel" class="right" aria-label="Alat zoom">
+              <button id="zoomOut" class="btn small" aria-label="Zoom keluar">-</button>
               <div class="pill">
-                <span class="stat">Zoom</span>
+                <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Zoom</span>
                 <input id="zoom" type="range" min="60" max="200" value="110" />
-                <span class="stat" id="zoomLabel">110%</span>
+                <span class="badge" id="zoomLabel">110%</span>
               </div>
-              <button id="zoomIn" class="btn small">+</button>
+              <button id="zoomIn" class="btn small" aria-label="Zoom masuk">+</button>
             </div>
           </div>
         </div>
@@ -281,60 +230,44 @@
   </div>
 
   <script>
-    // Robust PDF.js loader (avoid "pdfjsLib is not defined")
-    // Order: cdnjs -> jsdelivr -> unpkg -> local ./vendor
     const candidates = [
-      { name: "cdnjs",
-        lib: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+      { lib: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
         worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" },
-      { name: "jsdelivr",
-        lib: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+      { lib: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
         worker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js" },
-      { name: "unpkg",
-        lib: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js",
+      { lib: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js",
         worker: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js" },
-      { name: "local",
-        lib: "./vendor/pdf.min.js",
+      { lib: "./vendor/pdf.min.js",
         worker: "./vendor/pdf.worker.min.js" }
     ];
-
-    const libStatus = document.getElementById("libStatus");
-
     function loadScript(src){
       return new Promise((resolve, reject) => {
         const s = document.createElement("script");
-        s.src = src;
-        s.async = true;
+        s.src = src; s.async = true;
         s.onload = () => resolve();
         s.onerror = () => reject(new Error("Fail load: " + src));
         document.head.appendChild(s);
       });
     }
-
     async function tryLoad(i){
       if (i >= candidates.length) {
-        if (libStatus) libStatus.textContent = "PDF.js gagal load";
         alert("PDF.js gagal load. Jika rangkaian blok CDN, letak vendor/pdf.min.js dan vendor/pdf.worker.min.js dalam repo.");
         return;
       }
       const c = candidates[i];
-      if (libStatus) libStatus.textContent = "PDF.js: " + c.name;
-
       try{
         await loadScript(c.lib);
-        if (!window.pdfjsLib) throw new Error("pdfjsLib not found selepas load");
+        if (!window.pdfjsLib) throw new Error("pdfjsLib not found");
         window.pdfjsWorkerSrc = c.worker;
-        if (libStatus) libStatus.textContent = "PDF.js OK: " + c.name;
         if (window.initPdfApp) window.initPdfApp();
-        return;
       }catch(e){
         console.warn(e);
-        return tryLoad(i+1);
+        tryLoad(i+1);
       }
     }
+    tryLoad(0);
   </script>
 
   <script src="./database.js"></script>
-  <script>tryLoad(0);</script>
 </body>
 </html>
