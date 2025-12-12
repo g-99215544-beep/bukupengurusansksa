@@ -20,6 +20,44 @@ const ROLE_KEYWORDS = [
   "Data", "ICT", "Disiplin", "Kebajikan", "SPBT", "RMT", "PBS", "PBD"
 ];
 
+// Token biasa yang terlalu common (untuk elak merge tersalah)
+const COMMON_NAME_TOKENS = new Set([
+  "mohd","mohamad","muhammad","abdul","bin","binti","bt","b","bte",
+  "nur","siti","nor","noor","muhd","ahmad"
+]);
+
+// Perkataan/abbrev yang kerap tersangkut pada hujung nama (sebenarnya jawatan/bidang)
+const TRAILING_NON_NAME_TOKENS = new Set([
+  "kp","k.p","gpk","ppp","dg","dga","dgb",
+  "hem","kurikulum","kokurikulum","ppki","ppkip","prasekolah",
+  "apdm","ssdm","spbt","ict","bestari","makmal","data","keselamatan",
+  "bahasa","arab","inggeris","english","melayu","bm","bi","sains","math","matematik",
+  "guru","penolong","penyelaras","setiausaha","bendahari","ajk","ketua","panitia",
+  "pengawas","disiplin","kebajikan","rmt","emk","pemulihan","pbd","paks","peperiksaan"
+]);
+
+function isProbablyNonNameToken(tok){
+  if (!tok) return false;
+  const t = tok.toLowerCase();
+  if (TRAILING_NON_NAME_TOKENS.has(t)) return true;
+  if (/^[A-Z]{2,6}$/.test(tok)) return true;      // APDM, SSDM, ICT
+  if (tok.includes("/")) return true;             // Data/APDM
+  if (/^\d+$/.test(tok)) return true;
+  return false;
+}
+
+function trimTrailingNonNameWords(name){
+  const parts = String(name||"").trim().split(/\s+/);
+  while (parts.length){
+    let last = parts[parts.length-1];
+    last = last.replace(/[.,;:()]+$/g,"");
+    if (!last){ parts.pop(); continue; }
+    if (isProbablyNonNameToken(last)) parts.pop();
+    else break;
+  }
+  return parts.join(" ").trim();
+}
+
 /** Isi kandungan statik (boleh edit ikut buku anda) */
 const TOC = [
   { group: "Maklumat Umum", items: [
@@ -600,24 +638,32 @@ function shouldMergeName(a,b){
 
   const ta = nameTokens(a);
   const tb = nameTokens(b);
+  if (!ta.length || !tb.length) return false;
 
+  const A = new Set(ta);
+  const B = new Set(tb);
+
+  const inter = [];
+  for (const t of A) if (B.has(t)) inter.push(t);
+  const interNonCommon = inter.filter(t => !COMMON_NAME_TOKENS.has(t));
+
+  // RULE UTAMA: jika 3 token sama -> orang sama
+  if (interNonCommon.length >= 3) return true;
+
+  // Jika 2 token sama -> biasanya orang sama (sebab extra perkataan selalunya jawatan)
+  if (interNonCommon.length >= 2){
+    const sim = similarity(a,b);
+    const la = lastKey(ta), lb = lastKey(tb);
+    const sigSame = (firstKey(ta) === firstKey(tb) && lastKeySimilar(la, lb));
+
+    if (sigSame || sim >= 0.86) return true;
+    if (Math.max(ta.length, tb.length) >= 4) return true; // nama + extra jawatan
+  }
+
+  // fallback: typo kecil keseluruhan
   const ov = tokenOverlapScore(a,b);
   const sim = similarity(a,b);
-
-  // jika overlap rendah, jangan merge
-  if (ov < 0.70 && sim < 0.90) return false;
-
-  const fa = firstKey(ta), fb = firstKey(tb);
-  const la = lastKey(ta), lb = lastKey(tb);
-
-  // syarat kuat: firstKey sama dan lastKey hampir sama
-  if (fa && fb && fa === fb && lastKeySimilar(la, lb) && sim >= 0.86 && ov >= 0.72) return true;
-
-  // typo kecil keseluruhan
-  if (sim >= 0.92 && ov >= 0.80) return true;
-
-  // first token sama dan last token hampir sama
-  if (ta[0] && tb[0] && ta[0] === tb[0] && lastKeySimilar(ta[ta.length-1], tb[tb.length-1]) && sim >= 0.88 && ov >= 0.78) return true;
+  if (sim >= 0.92 && ov >= 0.70) return true;
 
   return false;
 }
@@ -741,7 +787,19 @@ function extractLinesFromTextContent(textContent){
 }
 
 function cleanName(s){
-  return String(s||"").replace(/\s+/g," ").replace(/[,:;)\]]+$/,"").trim();
+  let x = String(s||"").replace(/\s+/g," ").trim();
+
+  // normalisasi ringkas: "b." -> "bin", "bt." -> "binti"
+  x = x.replace(/\bb\.\b/gi, "bin")
+       .replace(/\bbt\.\b/gi, "binti")
+       .replace(/\bbte\.\b/gi, "binti");
+
+  x = x.replace(/[,:;)\]]+$/g, "").trim();
+
+  // buang perkataan jawatan yang tersangkut di hujung (contoh: "APDM", "KP Bahasa Arab", "Makmal Bestari")
+  x = trimTrailingNonNameWords(x);
+
+  return x;
 }
 
 function looksLikeRoleHeader(line){
