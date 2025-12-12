@@ -1,12 +1,10 @@
-// PDF.js Reader (GitHub Pages) - Lompat page confirm
+// Reader Buku Pengurusan (PDF.js) - Lompat page confirm
 // Fail PDF mesti di root repo: BUKU_PENGURUSAN_2021.pdf
+// PDF.js akan diload oleh index.html (robust loader).
 
 const PDF_URL = "./BUKU_PENGURUSAN_2021.pdf";
 
-// Pastikan worker versi sama dengan pdf.min.js
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://unpkg.com/pdfjs-dist@2.0.489/build/pdf.worker.min.js";
-
+// TOC (boleh edit jika mahu)
 const TOC = [
   { group: "Maklumat Umum", items: [
     { title: "Isi Kandungan", start: 1, end: 1 },
@@ -18,6 +16,15 @@ const TOC = [
     { title: "Profil Sekolah", start: 10, end: 10 },
     { title: "Cogan Kata, Guru Kelas & Enrolmen", start: 11, end: 11 },
     { title: "Lencana & Bendera Sekolah", start: 12, end: 12 },
+    { title: "Matlamat, Objektif & Piagam", start: 13, end: 15 },
+    { title: "Lagu Sekolah", start: 16, end: 16 },
+    { title: "Senarai Nama Guru & Staf", start: 17, end: 18 },
+    { title: "Carta Organisasi Induk", start: 19, end: 19 },
+    { title: "Pelan Sekolah", start: 20, end: 20 },
+    { title: "Aspirasi & Anjakan PPPM", start: 21, end: 22 },
+    { title: "Prinsip Kerja JPNJ & PPD Muar", start: 23, end: 24 },
+    { title: "Kalender Persekolahan", start: 25, end: 25 },
+    { title: "MMI, MBMMBI & Sarana Sekolah", start: 26, end: 27 },
   ]},
   { group: "Pengurusan Sekolah", items: [
     { title: "Garis Panduan Utama Sekolah", start: 28, end: 35 },
@@ -29,6 +36,26 @@ const TOC = [
   { group: "Pengurusan Kurikulum", items: [
     { title: "Carta Organisasi Kurikulum", start: 67, end: 67 },
     { title: "Majlis Pengurusan Kurikulum", start: 68, end: 74 },
+    { title: "Jadual Penyeliaan PdPc (Pencerapan Guru)", start: 75, end: 75 },
+    { title: "Jadual Penyeliaan HKM", start: 76, end: 76 },
+    { title: "Takwim PBS & Modul UPSR", start: 77, end: 77 },
+    { title: "Pencapaian UPSR", start: 78, end: 78 },
+    { title: "Giliran Bertugas GPK Semasa Cuti", start: 79, end: 79 },
+  ]},
+  { group: "Pengurusan Hal Ehwal Murid", items: [
+    { title: "Carta Organisasi HEM", start: 80, end: 80 },
+    { title: "Dasar HEM", start: 81, end: 83 },
+    { title: "Majlis Pengurusan HEM", start: 84, end: 87 },
+  ]},
+  { group: "Pengurusan Kokurikulum", items: [
+    { title: "Carta Organisasi Kokurikulum", start: 88, end: 88 },
+    { title: "Pengenalan & Panduan Kokurikulum", start: 89, end: 93 },
+    { title: "Majlis Pengurusan Kokurikulum", start: 94, end: 97 },
+    { title: "Program & Aktiviti Sekolah", start: 98, end: 98 },
+  ]},
+  { group: "Pengurusan PPKIP", items: [
+    { title: "Carta Organisasi PPKIP", start: 99, end: 99 },
+    { title: "Majlis Pengurusan PPKIP", start: 100, end: 106 },
   ]},
 ];
 
@@ -37,6 +64,8 @@ const QUICK = [
   { label: "Takwim", page: 37 },
   { label: "Jadual Bertugas", page: 49 },
   { label: "Organisasi Sekolah", page: 54 },
+  { label: "Senarai Guru", page: 17 },
+  { label: "Pelan Sekolah", page: 20 },
 ];
 
 const els = {
@@ -76,7 +105,6 @@ function setTab(name){
 els.tabs.forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
 
 function setStatus(txt){ els.status.textContent = txt; }
-
 function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
 
 async function renderPage(pageNum){
@@ -86,18 +114,15 @@ async function renderPage(pageNum){
   els.pageNum.value = String(currentPage);
   els.pageNote.textContent = `/ ${pdfDoc.numPages}`;
 
-  // cancel render lama jika ada
   if (renderTask && renderTask.cancel) {
     try { renderTask.cancel(); } catch(e) {}
   }
 
   const page = await pdfDoc.getPage(currentPage);
 
-  // scale ikut zoom
   const scale = (zoomPct / 100);
   const viewport = page.getViewport({ scale });
 
-  // HiDPI
   const dpr = window.devicePixelRatio || 1;
   const canvas = els.canvas;
   const ctx = canvas.getContext("2d", { alpha: false });
@@ -129,9 +154,8 @@ function updateZoom(newZoom){
 
 function fitToWidth(){
   if (!pdfDoc) return;
-  // anggar fit lebar: guna page semasa
   pdfDoc.getPage(currentPage).then(page => {
-    const wrapW = els.canvasWrap.clientWidth - 24; // padding
+    const wrapW = els.canvasWrap.clientWidth - 24;
     const viewport1 = page.getViewport({ scale: 1 });
     const fitScale = wrapW / viewport1.width;
     const fitZoom = clamp(Math.floor(fitScale * 100), 60, 200);
@@ -209,16 +233,20 @@ async function loadPdf(){
   buildQuickLinks();
   setTab("toc");
 
-  const loadingTask = pdfjsLib.getDocument({
-    url: PDF_URL,
-    // GitHub Pages ok
-    withCredentials: false,
-  });
+  const pdfjsLib = window.pdfjsLib;
+  if (!pdfjsLib) throw new Error("pdfjsLib not loaded");
 
+  // Worker from loader
+  const workerSrc = window.pdfjsWorkerSrc;
+  if (workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+  }
+
+  const loadingTask = pdfjsLib.getDocument({ url: PDF_URL, withCredentials: false });
   pdfDoc = await loadingTask.promise;
+
   els.pageNote.textContent = `/ ${pdfDoc.numPages}`;
   setStatus("Sedia");
-
   gotoPage(1);
 }
 
@@ -237,10 +265,7 @@ function wireUI(){
 
   els.btnFit.addEventListener("click", fitToWidth);
 
-  window.addEventListener("resize", () => {
-    // jangan auto fit setiap resize, tapi refresh render supaya tak blur
-    renderPage(currentPage);
-  });
+  window.addEventListener("resize", () => renderPage(currentPage));
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowLeft") gotoPage(currentPage - 1);
@@ -249,8 +274,12 @@ function wireUI(){
 }
 
 wireUI();
-loadPdf().catch(err => {
-  console.error(err);
-  setStatus("Gagal load PDF");
-  alert("Gagal load PDF. Semak nama fail PDF & pastikan ia ada di root repo.");
-});
+
+// Called by index.html after PDF.js successfully loaded
+window.initPdfApp = function initPdfApp(){
+  loadPdf().catch(err => {
+    console.error(err);
+    setStatus("Gagal load PDF");
+    alert("Gagal load PDF. Semak nama fail PDF & pastikan ia ada di root repo.");
+  });
+};
