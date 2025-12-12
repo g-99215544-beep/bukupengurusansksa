@@ -16,7 +16,6 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;background:linear-gradient(180deg,#070b14, #0b1220 40%, #070b14);color:var(--text);font-family:var(--font)}
-    a{color:inherit}
     .app{height:100%;display:flex;flex-direction:column}
     header{
       display:flex;gap:12px;align-items:center;justify-content:space-between;
@@ -40,8 +39,7 @@
       padding:10px 12px;border-radius:999px;border:1px solid var(--line);
       background:rgba(15,26,51,.6);
     }
-    input[type="search"]{
-      width:min(560px, 52vw);
+    input[type="search"], input[type="text"]{
       border:0;outline:0;background:transparent;color:var(--text);font-size:14px;
     }
     .btn{
@@ -57,7 +55,6 @@
     .btn:hover{transform:translateY(-1px); background:rgba(15,26,51,.9)}
     .btn:active{transform:translateY(0px)}
     .btn.primary{background:rgba(78,161,255,.18);border-color:rgba(78,161,255,.35)}
-    .btn.danger{background:rgba(255,90,106,.12);border-color:rgba(255,90,106,.25)}
     .btn.small{padding:8px 10px;border-radius:10px;font-size:13px}
     .main{flex:1;display:grid;grid-template-columns: 360px 1fr; gap:14px; padding:14px; min-height:0}
     aside{
@@ -109,55 +106,29 @@
     }
     .viewerTop .left, .viewerTop .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .stat{font-size:12px;color:var(--muted)}
-    .rangeNote{font-size:12px;color:var(--muted)}
-    .viewerBody{
-      flex:1;min-height:0;overflow:auto;padding:12px;display:flex;justify-content:center;
-    }
-    .pageWrap{
-      width:min(1100px, 100%);
-      background:rgba(0,0,0,.18);
+    .viewerBody{flex:1;min-height:0;overflow:auto;padding:12px}
+    .frameWrap{
+      height:100%;
+      border-radius:16px;
+      overflow:hidden;
       border:1px solid rgba(255,255,255,.07);
-      border-radius: 16px;
-      padding:10px;
+      background:rgba(0,0,0,.22);
     }
-    #pdfCanvas{width:100%;height:auto;display:block;border-radius:12px; background:#fff}
-    .textLayer{
-      position:relative;
-      margin-top:-10px;
-      padding:10px 6px 0;
-      color:#000;
-      font-family: var(--font);
+    iframe{
+      width:100%;
+      height:100%;
+      border:0;
+      background:#fff;
     }
-    .hidden{display:none !important}
     .help{padding:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.45}
+    .hidden{display:none !important}
     .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,.14);border-bottom-width:2px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text)}
-    .list{display:flex;flex-direction:column;gap:8px}
-    .card{
-      border:1px solid var(--line);border-radius:14px;background:rgba(11,21,48,.45);
-      padding:10px;
-    }
-    .card .h{display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .card .t{font-weight:800;font-size:13px}
-    .card .s{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.35}
-    .miniRow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .progress{
-      height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid rgba(255,255,255,.07)
-    }
-    .progress > div{height:100%;background:rgba(78,161,255,.85);width:0%}
     @media (max-width: 1000px){
       .main{grid-template-columns: 1fr}
       .brand{min-width:auto}
-      input[type="search"]{width:min(560px, 64vw)}
     }
   </style>
-
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.min.js"></script>
-  <script>
-    // Set worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.7.76/pdf.worker.min.js";
-  </script>
 </head>
 <body>
   <div class="app">
@@ -166,17 +137,17 @@
         <div class="logo" aria-hidden="true"></div>
         <div class="titleWrap">
           <div class="title">Reader Buku Pengurusan</div>
-          <div class="subtitle">Carian pantas, TOC, dan lompat terus ke muka surat</div>
+          <div class="subtitle">Klik isi kandungan untuk lompat ke muka surat (versi paling stabil, tanpa PDF.js)</div>
         </div>
       </div>
 
       <div class="controls">
-        <div class="pill" title="Cari dalam seluruh buku (atau dalam seksyen yang dipilih)">
+        <div class="pill" title="Tip: guna Ctrl+F dalam PDF (atau butang carian di viewer PDF)">
           <span style="color:var(--muted);font-size:12px">Cari</span>
-          <input id="q" type="search" placeholder="Contoh: FRM, perhimpunan, takwim, surat amaran..." />
-          <button id="btnSearch" class="btn small primary" title="Cari (Enter)">Cari</button>
+          <input id="q" type="search" placeholder="Tip: tekan Ctrl+F dalam PDF..." style="width:min(460px,52vw)" />
+          <button id="btnFindTip" class="btn small primary" title="Tunjuk cara cari">Tip</button>
         </div>
-        <button id="btnOpen" class="btn" title="Pilih PDF lain jika perlu">Buka PDF</button>
+        <button id="btnOpenNative" class="btn">Buka PDF</button>
         <button id="btnHelp" class="btn">Bantuan</button>
       </div>
     </header>
@@ -186,62 +157,39 @@
         <div class="asideTop">
           <div class="tabs">
             <button class="tab active" data-tab="toc">Isi Kandungan</button>
-            <button class="tab" data-tab="hasil">Hasil Carian</button>
             <button class="tab" data-tab="pantas">Pantas</button>
           </div>
-          <span id="idxStatus" class="badge">Sedia</span>
+          <span id="status" class="badge">Sedia</span>
         </div>
 
         <div class="asideBody">
           <div id="tab-toc"></div>
-          <div id="tab-hasil" class="hidden">
-            <div id="results" class="list"></div>
-          </div>
           <div id="tab-pantas" class="hidden">
-            <div class="card">
-              <div class="h">
-                <div class="t">Lompat pantas</div>
-                <span class="badge">klik untuk buka</span>
-              </div>
-              <div class="s">Direka untuk guru: jadual bertugas, takwim, garis panduan, organisasi, dan senarai guru.</div>
-              <div id="quickLinks" class="miniRow"></div>
+            <div class="section">
+              <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
+              <div class="sectionBody" id="quickLinks"></div>
             </div>
-
-            <div class="card">
-              <div class="h">
-                <div class="t">Indeks teks</div>
-                <span class="badge">localStorage</span>
+            <div class="section">
+              <button type="button"><span>Fail</span><span class="muted">PDF</span></button>
+              <div class="sectionBody" style="padding:10px">
+                <div style="font-size:12px;color:var(--muted);line-height:1.5">
+                  Nama fail: <span class="kbd">BUKU_PENGURUSAN_2021.pdf</span><br>
+                  Jika guna GitHub Pages, pastikan fail ini ada dalam root folder repo.
+                </div>
               </div>
-              <div class="s">Jika carian lambat, anda boleh bina indeks teks sekali (simpan dalam browser). Tekan butang di bawah.</div>
-              <div class="miniRow">
-                <button id="btnBuildIndex" class="btn small primary">Bina Indeks Teks</button>
-                <button id="btnClearIndex" class="btn small danger">Reset Indeks</button>
-              </div>
-              <div style="margin-top:10px">
-                <div class="progress"><div id="pbar"></div></div>
-                <div id="pmsg" class="rangeNote" style="margin-top:8px">Belum bina indeks.</div>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="h">
-                <div class="t">Fail PDF</div>
-                <span class="badge" id="pdfName">-</span>
-              </div>
-              <div class="s" id="pdfInfo">-</div>
             </div>
           </div>
         </div>
 
         <div class="help hidden" id="helpBox">
-          <div style="font-weight:800;color:var(--text);margin-bottom:8px">Cara guna (ringkas)</div>
+          <div style="font-weight:800;color:var(--text);margin-bottom:8px">Cara guna</div>
           <div style="margin-bottom:10px">
-            1) Klik <span class="kbd">Isi Kandungan</span> untuk lompat muka surat.<br/>
-            2) Taip carian dan tekan <span class="kbd">Enter</span> atau <span class="kbd">Cari</span>.<br/>
-            3) Jika mahu carian paling laju, bina <span class="kbd">Indeks Teks</span> sekali sahaja.
+            1) Klik item dalam <span class="kbd">Isi Kandungan</span> untuk lompat muka surat.<br/>
+            2) Untuk cari perkataan dalam PDF: klik pada area PDF, kemudian tekan <span class="kbd">Ctrl</span>+<span class="kbd">F</span> (Windows) / <span class="kbd">⌘</span>+<span class="kbd">F</span> (Mac).<br/>
+            3) Butang <span class="kbd">Buka PDF</span> akan buka PDF dalam tab baru.
           </div>
           <div>
-            Pintasan: <span class="kbd">←</span>/<span class="kbd">→</span> (page), <span class="kbd">+</span>/<span class="kbd">-</span> (zoom), <span class="kbd">f</span> (fit width), <span class="kbd">Esc</span> (tutup bantuan).
+            Pintasan: <span class="kbd">←</span>/<span class="kbd">→</span> (page), <span class="kbd">+</span>/<span class="kbd">-</span> (zoom), <span class="kbd">Esc</span> (tutup bantuan).
           </div>
         </div>
       </aside>
@@ -254,39 +202,29 @@
             <div class="pill">
               <span class="stat">Muka</span>
               <input id="pageNum" inputmode="numeric" style="width:64px" />
-              <span class="stat">/ <span id="pageCount">-</span></span>
+              <span class="stat" id="pageNote">/ -</span>
             </div>
-            <button id="fitWidth" class="btn small">Fit</button>
           </div>
           <div class="right">
             <button id="zoomOut" class="btn small">-</button>
             <div class="pill">
               <span class="stat">Zoom</span>
-              <input id="zoom" type="range" min="60" max="180" value="110" />
+              <input id="zoom" type="range" min="70" max="180" value="110" />
               <span class="stat" id="zoomLabel">110%</span>
             </div>
             <button id="zoomIn" class="btn small">+</button>
-            <button id="openNative" class="btn small">Buka PDF</button>
           </div>
         </div>
 
         <div class="viewerBody">
-          <div class="pageWrap">
-            <canvas id="pdfCanvas"></canvas>
-            <div id="pageText" class="card hidden" style="margin-top:10px; background:rgba(255,255,255,.06)">
-              <div class="h">
-                <div class="t">Teks muka surat (untuk salin)</div>
-                <span class="badge" id="textPageNo">-</span>
-              </div>
-              <div class="s" id="textContent" style="white-space:pre-wrap;color:var(--text);margin-top:10px"></div>
-            </div>
+          <div class="frameWrap">
+            <iframe id="pdfFrame" title="PDF Viewer"></iframe>
           </div>
         </div>
       </section>
     </div>
   </div>
 
-  <input id="filePicker" class="hidden" type="file" accept="application/pdf" />
   <script src="./database.js"></script>
 </body>
 </html>
