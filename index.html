@@ -2,7 +2,7 @@
 <html lang="ms">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Reader Buku Pengurusan (PDF.js)</title>
   <meta name="theme-color" content="#0b1220" />
   <style>
@@ -15,20 +15,28 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:linear-gradient(180deg,#070b14, #0b1220 40%, #070b14);color:var(--text);font-family:var(--font)}
+    body{
+      margin:0;
+      background:linear-gradient(180deg,#070b14, #0b1220 40%, #070b14);
+      color:var(--text);
+      font-family:var(--font);
+      overflow-x:hidden;
+    }
     .app{height:100%;display:flex;flex-direction:column}
     header{
       display:flex;gap:12px;align-items:center;justify-content:space-between;
-      padding:14px 16px;border-bottom:1px solid var(--line);background:rgba(11,18,32,.92);backdrop-filter: blur(8px);
-      position:sticky;top:0;z-index:10;
+      padding:14px 16px;border-bottom:1px solid var(--line);
+      background:rgba(11,18,32,.92);backdrop-filter: blur(8px);
+      position:sticky;top:0;z-index:60;
     }
-    .brand{display:flex;align-items:center;gap:10px;min-width: 260px;}
+    .brand{display:flex;align-items:center;gap:10px;min-width: 240px;}
     .logo{
       width:34px;height:34px;border-radius:10px;background:
         radial-gradient(circle at 30% 30%, rgba(78,161,255,.9), rgba(78,161,255,.1) 55%),
         linear-gradient(135deg, rgba(67,209,158,.45), rgba(255,90,106,.25));
       box-shadow: var(--shadow);
       border:1px solid rgba(255,255,255,.10);
+      flex:0 0 auto;
     }
     .titleWrap{display:flex;flex-direction:column;line-height:1.1}
     .title{font-weight:800;font-size:15px}
@@ -44,6 +52,7 @@
       transition:.15s transform, .15s background;
       user-select:none;
       font-size:13px;
+      white-space:nowrap;
     }
     .btn:hover{transform:translateY(-1px); background:rgba(15,26,51,.9)}
     .btn:active{transform:translateY(0px)}
@@ -57,24 +66,36 @@
     input[type="text"]{
       border:0;outline:0;background:transparent;color:var(--text);font-size:14px;
     }
-    .main{flex:1;display:grid;grid-template-columns: 360px 1fr; gap:14px; padding:14px; min-height:0}
+    .badge{
+      font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
+      background:rgba(15,26,51,.55);white-space:nowrap
+    }
+
+    /* Layout */
+    .main{
+      flex:1;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:14px;
+      padding:14px;
+      min-height:0;
+    }
     aside{
       min-height:0;
       border:1px solid var(--line); border-radius: var(--radius);
       background:rgba(15,26,51,.62); box-shadow: var(--shadow);
       overflow:hidden; display:flex; flex-direction:column;
     }
-    .asideTop{padding:12px 12px 10px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .asideTop{
+      padding:12px 12px 10px;border-bottom:1px solid var(--line);
+      display:flex;gap:10px;align-items:center;justify-content:space-between
+    }
     .tabs{display:flex;gap:8px;align-items:center}
     .tab{
       padding:8px 10px;border-radius:10px;border:1px solid var(--line);
       background:rgba(11,21,48,.55);cursor:pointer;font-size:13px;color:var(--muted);
     }
     .tab.active{background:rgba(78,161,255,.16);border-color:rgba(78,161,255,.35);color:var(--text)}
-    .badge{
-      font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
-      background:rgba(15,26,51,.55);white-space:nowrap
-    }
     .asideBody{flex:1;min-height:0;overflow:auto;padding:10px}
     .section{
       border:1px solid var(--line);border-radius:14px;background:rgba(11,21,48,.45);
@@ -95,6 +116,7 @@
     .tocItem.active{background:rgba(78,161,255,.14);border-color:rgba(78,161,255,.28)}
     .tocItem .name{font-size:13px;font-weight:700}
     .tocItem .meta{font-size:12px;color:var(--muted)}
+
     .viewer{
       min-height:0;
       border:1px solid var(--line);border-radius: var(--radius);
@@ -121,11 +143,61 @@
       padding:12px;
     }
     canvas{background:#fff;border-radius:10px;box-shadow: 0 10px 22px rgba(0,0,0,.25)}
-    .note{color:var(--muted);font-size:12px;line-height:1.4}
     .hidden{display:none !important}
+
+    /* Mobile drawer for TOC */
+    #drawerBackdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      z-index:55;
+      opacity:0;
+      pointer-events:none;
+      transition: .18s opacity;
+    }
+    body.drawer-open #drawerBackdrop{
+      opacity:1;
+      pointer-events:auto;
+    }
+    aside.drawer{
+      position:fixed;
+      top:64px; /* header height approx, will be corrected in JS */
+      left:0;
+      bottom:0;
+      width:min(360px, 88vw);
+      border-radius: 0 16px 16px 0;
+      transform: translateX(-105%);
+      transition: .18s transform;
+      z-index:56;
+    }
+    body.drawer-open aside.drawer{
+      transform: translateX(0);
+    }
+
+    /* Responsive tweaks */
     @media (max-width: 1000px){
-      .main{grid-template-columns: 1fr}
+      .main{grid-template-columns: 1fr; padding:10px}
+      /* Keep viewer full width; aside becomes drawer overlay */
+      aside{display:none;}
+      aside.drawer{display:flex;}
       .brand{min-width:auto}
+    }
+    @media (max-width: 600px){
+      header{padding:10px 12px}
+      .subtitle{display:none}
+      .btn{padding:9px 10px}
+      .viewerBody{padding:10px}
+      .canvasWrap{padding:10px}
+      /* Compact controls: hide tools panel by default */
+      #btnTools{display:inline-flex}
+      #toolPanel{display:none}
+      #toolPanel.open{display:flex}
+      /* reduce clutter */
+      #libStatus{display:none}
+    }
+    @media (min-width: 601px){
+      #btnTools{display:none}
+      #toolPanel{display:flex}
     }
   </style>
 </head>
@@ -142,14 +214,17 @@
       </div>
 
       <div class="controls">
+        <button id="btnToc" class="btn">Isi Kandungan</button>
         <span id="libStatus" class="badge">Memuatkan PDF.js…</span>
         <button id="btnOpenPdf" class="btn">Buka PDF</button>
         <button id="btnFit" class="btn">Fit</button>
       </div>
     </header>
 
+    <div id="drawerBackdrop" aria-hidden="true"></div>
+
     <div class="main">
-      <aside>
+      <aside class="drawer" id="drawer">
         <div class="asideTop">
           <div class="tabs">
             <button class="tab active" data-tab="toc">Isi Kandungan</button>
@@ -164,19 +239,6 @@
             <div class="section">
               <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
               <div class="sectionBody" id="quickLinks"></div>
-            </div>
-            <div class="section">
-              <button type="button"><span>Nota</span><span class="muted">jika gagal load</span></button>
-              <div class="sectionBody" style="padding:10px 12px">
-                <div class="note">
-                  Jika rangkaian blok CDN, buat folder <b>vendor/</b> dan letak:
-                  <div style="margin-top:6px">
-                    <code>vendor/pdf.min.js</code><br/>
-                    <code>vendor/pdf.worker.min.js</code>
-                  </div>
-                  App ini akan auto cuba local selepas CDN.
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -196,13 +258,16 @@
           </div>
 
           <div class="right">
-            <button id="zoomOut" class="btn small">-</button>
-            <div class="pill">
-              <span class="stat">Zoom</span>
-              <input id="zoom" type="range" min="60" max="200" value="110" />
-              <span class="stat" id="zoomLabel">110%</span>
+            <button id="btnTools" class="btn small">Alat</button>
+            <div id="toolPanel" class="right">
+              <button id="zoomOut" class="btn small">-</button>
+              <div class="pill">
+                <span class="stat">Zoom</span>
+                <input id="zoom" type="range" min="60" max="200" value="110" />
+                <span class="stat" id="zoomLabel">110%</span>
+              </div>
+              <button id="zoomIn" class="btn small">+</button>
             </div>
-            <button id="zoomIn" class="btn small">+</button>
           </div>
         </div>
 
@@ -219,26 +284,18 @@
     // Robust PDF.js loader (avoid "pdfjsLib is not defined")
     // Order: cdnjs -> jsdelivr -> unpkg -> local ./vendor
     const candidates = [
-      {
-        name: "cdnjs",
+      { name: "cdnjs",
         lib: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
-        worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
-      },
-      {
-        name: "jsdelivr",
+        worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js" },
+      { name: "jsdelivr",
         lib: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
-        worker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
-      },
-      {
-        name: "unpkg",
+        worker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js" },
+      { name: "unpkg",
         lib: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js",
-        worker: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
-      },
-      {
-        name: "local",
+        worker: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js" },
+      { name: "local",
         lib: "./vendor/pdf.min.js",
-        worker: "./vendor/pdf.worker.min.js"
-      }
+        worker: "./vendor/pdf.worker.min.js" }
     ];
 
     const libStatus = document.getElementById("libStatus");
@@ -256,23 +313,18 @@
 
     async function tryLoad(i){
       if (i >= candidates.length) {
-        libStatus.textContent = "PDF.js gagal load";
-        libStatus.style.borderColor = "rgba(255,90,106,.35)";
-        libStatus.style.background = "rgba(255,90,106,.18)";
+        if (libStatus) libStatus.textContent = "PDF.js gagal load";
         alert("PDF.js gagal load. Jika rangkaian blok CDN, letak vendor/pdf.min.js dan vendor/pdf.worker.min.js dalam repo.");
         return;
       }
       const c = candidates[i];
-      libStatus.textContent = "Cuba PDF.js: " + c.name;
+      if (libStatus) libStatus.textContent = "PDF.js: " + c.name;
 
       try{
         await loadScript(c.lib);
         if (!window.pdfjsLib) throw new Error("pdfjsLib not found selepas load");
-        window.pdfjsWorkerSrc = c.worker; // pass to app
-        libStatus.textContent = "PDF.js OK: " + c.name;
-        libStatus.style.borderColor = "rgba(67,209,158,.35)";
-        libStatus.style.background = "rgba(67,209,158,.18)";
-        // Start the app (defined in database.js)
+        window.pdfjsWorkerSrc = c.worker;
+        if (libStatus) libStatus.textContent = "PDF.js OK: " + c.name;
         if (window.initPdfApp) window.initPdfApp();
         return;
       }catch(e){
@@ -280,12 +332,9 @@
         return tryLoad(i+1);
       }
     }
+  </script>
 
-    // Load app code first (safe), then load PDF.js, then init
-  </script>
   <script src="./database.js"></script>
-  <script>
-    tryLoad(0);
-  </script>
+  <script>tryLoad(0);</script>
 </body>
 </html>
