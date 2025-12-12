@@ -14,8 +14,7 @@
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
-    .app{height:100%;display:flex;flex-direction:column}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
 
     header{
       display:flex;align-items:center;justify-content:space-between;gap:10px;
@@ -25,15 +24,16 @@
     }
     .brand{display:flex;align-items:center;gap:10px;min-width:0}
     .logo{
-      width:24px;height:24px;border-radius:7px;
+      width:22px;height:22px;border-radius:7px;
       background: linear-gradient(135deg, rgba(37,99,235,.20), rgba(37,99,235,.06));
       border:1px solid rgba(37,99,235,.22);
-      box-shadow: var(--shadow);flex:0 0 auto;
+      box-shadow: 0 4px 12px rgba(17,24,39,.08);
+      flex:0 0 auto;
     }
     .title{
       font-weight:800;font-size:14px;letter-spacing:.2px;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-      max-width: 62vw;
+      max-width: 64vw;
     }
     .controls{display:flex;gap:8px;align-items:center;justify-content:flex-end;flex:0 0 auto}
     .btn{
@@ -45,17 +45,12 @@
     .btn:active{transform:translateY(1px)}
     .btn.primary{border-color: rgba(37,99,235,.25); background: rgba(37,99,235,.08)}
     .btn.small{padding:7px 9px;border-radius:10px;font-size:13px}
-    .btn.ghost{background:transparent; box-shadow:none}
-    .pill{
-      display:flex;align-items:center;gap:8px;
-      padding:8px 10px;border-radius:999px;border:1px solid var(--line);
-      background:var(--panel);box-shadow: 0 2px 8px rgba(17,24,39,.04);
+    .badge{
+      font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);
+      color:var(--muted);background:var(--panel2);white-space:nowrap
     }
-    input[type="text"]{border:0;outline:0;background:transparent;color:var(--text);font-size:14px}
-    .badge{font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);background:var(--panel2);white-space:nowrap}
 
-    .main{flex:1;display:grid;grid-template-columns: 360px 1fr;gap:12px;padding:12px;min-height:0}
-
+    /* Drawer */
     #drawerBackdrop{
       position:fixed;inset:0;background:rgba(17,24,39,.35);
       z-index:55;opacity:0;pointer-events:none;transition:.18s opacity;
@@ -85,37 +80,7 @@
     .tocItem .name{font-size:13px;font-weight:800}
     .tocItem .meta{font-size:12px;color:var(--muted)}
 
-    /* Guru panel */
-    .field{
-      border:1px solid var(--line);
-      background: var(--panel2);
-      border-radius: 12px;
-      padding: 10px 10px;
-      display:flex;
-      gap:8px;
-      align-items:center;
-      margin-bottom:10px;
-    }
-    .field input{width:100%;font-size:14px}
-    .chip{
-      display:inline-flex;align-items:center;
-      padding:7px 9px;border-radius:999px;border:1px solid var(--line);
-      background: var(--panel2);color: var(--text);
-      font-size:12px;font-weight:700;margin: 0 6px 6px 0;
-      cursor:pointer;
-    }
-    .chip:hover{border-color: rgba(17,24,39,.18)}
-    .teacherCard{border:1px solid var(--line);border-radius:14px;background: var(--panel);padding: 10px}
-    .teacherName{font-weight:900;font-size:14px}
-    .teacherHint{color:var(--muted);font-size:12px;margin-top:4px}
-    .teacherList{display:flex;flex-direction:column;gap:8px}
-    .teacherBtn{
-      text-align:left;border:1px solid transparent;background: transparent;
-      padding:10px 10px;border-radius:12px;cursor:pointer;font-weight:800;color: var(--text);
-    }
-    .teacherBtn:hover{background: rgba(17,24,39,.03); border-color: rgba(17,24,39,.06)}
-    .teacherBtn small{display:block;color:var(--muted);font-weight:700;margin-top:2px}
-
+    /* Guru tab */
     .miniRow{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:8px 0 10px}
     .linkBtn{
       border:1px solid var(--line);
@@ -128,131 +93,198 @@
     }
     .linkBtn:hover{background: rgba(17,24,39,.03)}
     .subBadge{font-size:11px;color:var(--muted)}
-
-    .viewer{min-height:0;border:1px solid var(--line);border-radius: var(--radius);background:var(--panel);box-shadow: var(--shadow);overflow:hidden;display:flex;flex-direction:column}
-    .viewerTop{padding:8px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:rgba(247,247,248,.7)}
-    .viewerTop .left,.viewerTop .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .viewerBody{flex:1;min-height:0;overflow:auto;padding:10px;background:var(--panel)}
-    .canvasWrap{width:100%;min-height:100%;display:flex;justify-content:center;align-items:flex-start;border-radius:16px;overflow:auto;border:1px solid rgba(17,24,39,.08);background:#eef1f5;padding:10px}
-    canvas{background:#fff;border-radius:10px;box-shadow: 0 10px 22px rgba(17,24,39,.12)}
-    .hidden{display:none !important}
-
-    #toolPanel{display:flex}
-    @media (max-width: 900px){
-      .main{grid-template-columns: 1fr; padding:10px}
-      #toolPanel{display:none}
-      #toolPanel.open{display:flex}
-      #btnTools{display:inline-flex}
+    .field{
+      border:1px solid var(--line);
+      background: var(--panel2);
+      border-radius: 12px;
+      padding: 10px 10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      margin-bottom:10px;
     }
-    @media (min-width: 901px){
-      #btnTools{display:none}
-      #toolPanel{display:flex}
+    select{
+      width:100%;
+      border:0;
+      outline:0;
+      background:transparent;
+      font-size:14px;
+      color:var(--text);
+      appearance:none;
+    }
+    .teacherCard{border:1px solid var(--line);border-radius:14px;background: var(--panel);padding: 10px}
+    .teacherName{font-weight:900;font-size:14px}
+    .teacherHint{color:var(--muted);font-size:12px;margin-top:4px}
+    .chip{
+      display:inline-flex;align-items:center;
+      padding:7px 9px;border-radius:999px;border:1px solid var(--line);
+      background: var(--panel2);color: var(--text);
+      font-size:12px;font-weight:700;margin: 0 6px 6px 0;
+      cursor:pointer;
+    }
+    .chip:hover{border-color: rgba(17,24,39,.18)}
+
+    /* Viewer: scroll pages (no prev/next buttons) */
+    .viewer{
+      height:calc(100vh - 54px);
+      display:flex;
+      flex-direction:column;
+      padding:10px;
+      gap:10px;
+    }
+    .viewerTop{
+      display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;
+    }
+    .viewerTop .left,.viewerTop .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .viewerTop .right{justify-content:flex-end}
+    .pill{
+      display:flex;align-items:center;gap:8px;
+      padding:8px 10px;border-radius:999px;border:1px solid var(--line);
+      background:var(--panel);box-shadow: 0 2px 8px rgba(17,24,39,.04);
+    }
+    .pill label{font-size:12px;color:var(--muted);font-weight:700}
+    #pageNow{font-weight:900;color:var(--text)}
+    #tools{display:none}
+    #tools.open{display:flex}
+    #tools{gap:8px;align-items:center;flex-wrap:wrap}
+    input[type="range"]{width:160px}
+
+    .pagesWrap{
+      flex:1;
+      min-height:0;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow:auto;
+      padding:10px;
+    }
+
+    .pageBox{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      margin: 0 auto 12px;
+    }
+    .pageInner{
+      background:#eef1f5;
+      padding:10px;
+      border-radius:16px;
+      border:1px solid rgba(17,24,39,.08);
+      width:max-content;
+    }
+    canvas{
+      display:block;
+      background:#fff;
+      border-radius:10px;
+      box-shadow: 0 10px 22px rgba(17,24,39,.12)
+    }
+    .pagePlaceholder{
+      width: 72vw;
+      max-width: 880px;
+      height: 1100px;
+      border-radius:10px;
+      background: linear-gradient(90deg, #f1f2f4 25%, #e9eaee 37%, #f1f2f4 63%);
+      background-size: 400% 100%;
+      animation: shimmer 1.2s ease-in-out infinite;
+    }
+    @keyframes shimmer{
+      0%{background-position: 100% 0}
+      100%{background-position: 0 0}
+    }
+
+    /* Mobile: maximize PDF */
+    @media (max-width: 900px){
+      .viewer{padding:8px}
+      .pagesWrap{padding:8px}
+      .pagePlaceholder{width: calc(100vw - 40px); height: 900px}
+      input[type="range"]{width:140px}
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
-        <div class="title">bukupengurusansriaman</div>
-      </div>
-      <div class="controls">
-        <button id="btnToc" class="btn primary">Isi Kandungan</button>
-      </div>
-    </header>
-
-    <div id="drawerBackdrop" aria-hidden="true"></div>
-
-    <div class="main">
-      <aside class="drawer" id="drawer" aria-label="Isi kandungan">
-        <div class="asideTop">
-          <div class="tabs">
-            <button class="tab active" data-tab="toc">Isi</button>
-            <button class="tab" data-tab="pantas">Pantas</button>
-            <button class="tab" data-tab="guru">Guru</button>
-          </div>
-          <span id="status" class="badge">Loading…</span>
-        </div>
-
-        <div class="asideBody">
-          <div id="tab-toc"></div>
-
-          <div id="tab-pantas" class="hidden">
-            <div class="section">
-              <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
-              <div class="sectionBody" id="quickLinks"></div>
-            </div>
-          </div>
-
-          <div id="tab-guru" class="hidden">
-            <div class="miniRow">
-              <div>
-                <div style="font-weight:900;font-size:13px">Senarai tugas guru</div>
-                <div class="subBadge" id="teacherIndexStatus">Index: belum siap</div>
-              </div>
-              <button id="btnReindex" class="linkBtn" title="Imbas semula PDF (ambil masa sedikit)">Imbas</button>
-            </div>
-
-            <div class="field" title="Cari nama guru">
-              <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Cari</span>
-              <input id="teacherSearch" type="text" placeholder="Contoh: Pn. Siti / Cikgu Abu" />
-            </div>
-
-            <div id="teacherResults" class="teacherList"></div>
-
-            <div style="height:10px"></div>
-
-            <div class="teacherCard">
-              <div class="teacherName" id="teacherName">Pilih nama guru</div>
-              <div class="teacherHint" id="teacherHint">Klik tugas untuk lompat ke muka surat berkaitan.</div>
-              <div style="height:8px"></div>
-              <div id="teacherChips"></div>
-            </div>
-
-            <div style="height:10px"></div>
-            <div class="teacherHint">
-              Nota: Sistem akan <b>imbas teks PDF</b> dan buat senarai automatik. Jika ada nama/tugas tak tepat,
-              boleh tambah “manual override” dalam <b>database.js</b>.
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      <section class="viewer" aria-label="Viewer PDF">
-        <div class="viewerTop">
-          <div class="left">
-            <button id="prev" class="btn small" aria-label="Sebelum">◀</button>
-            <button id="next" class="btn small" aria-label="Seterus">▶</button>
-            <div class="pill" aria-label="Muka surat">
-              <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Muka</span>
-              <input id="pageNum" inputmode="numeric" style="width:64px" />
-              <span class="badge" id="pageNote">/ -</span>
-            </div>
-          </div>
-
-          <div class="right">
-            <button id="btnTools" class="btn small" aria-label="Buka alat">Alat</button>
-            <div id="toolPanel" class="right" aria-label="Alat zoom">
-              <button id="zoomOut" class="btn small" aria-label="Zoom keluar">-</button>
-              <div class="pill">
-                <span class="badge" style="border:0;background:transparent;padding:0;color:var(--muted)">Zoom</span>
-                <input id="zoom" type="range" min="60" max="200" value="110" />
-                <span class="badge" id="zoomLabel">110%</span>
-              </div>
-              <button id="zoomIn" class="btn small" aria-label="Zoom masuk">+</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="viewerBody">
-          <div class="canvasWrap" id="canvasWrap">
-            <canvas id="pdfCanvas"></canvas>
-          </div>
-        </div>
-      </section>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
+      <div class="title">bukupengurusansriaman</div>
     </div>
-  </div>
+    <div class="controls">
+      <button id="btnToc" class="btn primary">Isi Kandungan</button>
+    </div>
+  </header>
+
+  <div id="drawerBackdrop" aria-hidden="true"></div>
+
+  <aside class="drawer" id="drawer" aria-label="Isi kandungan">
+    <div class="asideTop">
+      <div class="tabs">
+        <button class="tab active" data-tab="toc">Isi</button>
+        <button class="tab" data-tab="pantas">Pantas</button>
+        <button class="tab" data-tab="guru">Guru</button>
+      </div>
+      <span id="status" class="badge">Loading…</span>
+    </div>
+
+    <div class="asideBody">
+      <div id="tab-toc"></div>
+
+      <div id="tab-pantas" class="hidden">
+        <div class="section">
+          <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
+          <div class="sectionBody" id="quickLinks"></div>
+        </div>
+      </div>
+
+      <div id="tab-guru" class="hidden">
+        <div class="miniRow">
+          <div>
+            <div style="font-weight:900;font-size:13px">Tugas guru</div>
+            <div class="subBadge" id="teacherIndexStatus">Index: belum siap</div>
+          </div>
+          <button id="btnReindex" class="linkBtn" title="Imbas semula PDF (ambil masa sedikit)">Imbas</button>
+        </div>
+
+        <div class="field">
+          <select id="teacherSelect" aria-label="Pilih nama guru">
+            <option value="">Pilih nama guru…</option>
+          </select>
+        </div>
+
+        <div class="teacherCard">
+          <div class="teacherName" id="teacherName">Pilih nama guru</div>
+          <div class="teacherHint" id="teacherHint">Klik tugas untuk lompat ke muka surat berkaitan.</div>
+          <div style="height:8px"></div>
+          <div id="teacherChips"></div>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="teacherHint">
+          Nota: App akan buat index automatik dari teks PDF. Jika ada yang tak tepat, boleh tambah “manual override” dalam <b>database.js</b>.
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="viewer" aria-label="Viewer PDF (scroll)">
+    <div class="viewerTop">
+      <div class="left">
+        <span class="badge"><span id="pageNow">Muka 1</span> <span id="pageTotal">/ -</span></span>
+        <span class="badge" id="zoomLabel">Fit</span>
+      </div>
+      <div class="right">
+        <button id="btnTools" class="btn small">Alat</button>
+        <div id="tools">
+          <label class="badge" style="border:0;background:transparent;padding:0">Zoom</label>
+          <input id="zoom" type="range" min="60" max="200" value="110" />
+          <button id="btnFit" class="btn small">Fit</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pagesWrap" id="pagesWrap" aria-label="Scroll pages">
+      <div id="pages"></div>
+    </div>
+  </main>
 
   <script>
     const candidates = [
