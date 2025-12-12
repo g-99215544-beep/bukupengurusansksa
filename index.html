@@ -8,10 +8,10 @@
   <style>
     :root{
       --bg:#0b1220; --panel:#0f1a33; --panel2:#0b1530; --text:#e8eefc; --muted:#9fb2d9;
-      --accent:#4ea1ff; --danger:#ff5a6a; --line:rgba(255,255,255,.09);
+      --accent:#4ea1ff; --danger:#ff5a6a; --ok:#43d19e; --line:rgba(255,255,255,.09);
       --shadow: 0 10px 30px rgba(0,0,0,.25);
       --radius: 14px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -34,14 +34,6 @@
     .title{font-weight:800;font-size:15px}
     .subtitle{font-size:12px;color:var(--muted)}
     .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end}
-    .pill{
-      display:flex;align-items:center;gap:8px;
-      padding:10px 12px;border-radius:999px;border:1px solid var(--line);
-      background:rgba(15,26,51,.6);
-    }
-    input[type="text"], input[type="search"]{
-      border:0;outline:0;background:transparent;color:var(--text);font-size:14px;
-    }
     .btn{
       border:1px solid var(--line);
       background:rgba(15,26,51,.6);
@@ -51,10 +43,20 @@
       display:inline-flex;align-items:center;gap:8px;
       transition:.15s transform, .15s background;
       user-select:none;
+      font-size:13px;
     }
     .btn:hover{transform:translateY(-1px); background:rgba(15,26,51,.9)}
-    .btn.small{padding:8px 10px;border-radius:10px;font-size:13px}
+    .btn:active{transform:translateY(0px)}
+    .btn.small{padding:8px 10px;border-radius:10px}
     .btn.primary{background:rgba(78,161,255,.18);border-color:rgba(78,161,255,.35)}
+    .pill{
+      display:flex;align-items:center;gap:8px;
+      padding:10px 12px;border-radius:999px;border:1px solid var(--line);
+      background:rgba(15,26,51,.6);
+    }
+    input[type="text"]{
+      border:0;outline:0;background:transparent;color:var(--text);font-size:14px;
+    }
     .main{flex:1;display:grid;grid-template-columns: 360px 1fr; gap:14px; padding:14px; min-height:0}
     aside{
       min-height:0;
@@ -69,6 +71,10 @@
       background:rgba(11,21,48,.55);cursor:pointer;font-size:13px;color:var(--muted);
     }
     .tab.active{background:rgba(78,161,255,.16);border-color:rgba(78,161,255,.35);color:var(--text)}
+    .badge{
+      font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
+      background:rgba(15,26,51,.55);white-space:nowrap
+    }
     .asideBody{flex:1;min-height:0;overflow:auto;padding:10px}
     .section{
       border:1px solid var(--line);border-radius:14px;background:rgba(11,21,48,.45);
@@ -89,10 +95,6 @@
     .tocItem.active{background:rgba(78,161,255,.14);border-color:rgba(78,161,255,.28)}
     .tocItem .name{font-size:13px;font-weight:700}
     .tocItem .meta{font-size:12px;color:var(--muted)}
-    .badge{
-      font-size:11px;padding:6px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);
-      background:rgba(15,26,51,.55);white-space:nowrap
-    }
     .viewer{
       min-height:0;
       border:1px solid var(--line);border-radius: var(--radius);
@@ -119,15 +121,13 @@
       padding:12px;
     }
     canvas{background:#fff;border-radius:10px;box-shadow: 0 10px 22px rgba(0,0,0,.25)}
+    .note{color:var(--muted);font-size:12px;line-height:1.4}
     .hidden{display:none !important}
     @media (max-width: 1000px){
       .main{grid-template-columns: 1fr}
       .brand{min-width:auto}
     }
   </style>
-
-  <!-- PDF.js UMD (ada pdfjsLib global) -->
-  <script src="https://unpkg.com/pdfjs-dist@2.0.489/build/pdf.min.js"></script>
 </head>
 
 <body>
@@ -142,6 +142,7 @@
       </div>
 
       <div class="controls">
+        <span id="libStatus" class="badge">Memuatkan PDF.js…</span>
         <button id="btnOpenPdf" class="btn">Buka PDF</button>
         <button id="btnFit" class="btn">Fit</button>
       </div>
@@ -163,6 +164,19 @@
             <div class="section">
               <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
               <div class="sectionBody" id="quickLinks"></div>
+            </div>
+            <div class="section">
+              <button type="button"><span>Nota</span><span class="muted">jika gagal load</span></button>
+              <div class="sectionBody" style="padding:10px 12px">
+                <div class="note">
+                  Jika rangkaian blok CDN, buat folder <b>vendor/</b> dan letak:
+                  <div style="margin-top:6px">
+                    <code>vendor/pdf.min.js</code><br/>
+                    <code>vendor/pdf.worker.min.js</code>
+                  </div>
+                  App ini akan auto cuba local selepas CDN.
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -201,6 +215,77 @@
     </div>
   </div>
 
+  <script>
+    // Robust PDF.js loader (avoid "pdfjsLib is not defined")
+    // Order: cdnjs -> jsdelivr -> unpkg -> local ./vendor
+    const candidates = [
+      {
+        name: "cdnjs",
+        lib: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js",
+        worker: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+      },
+      {
+        name: "jsdelivr",
+        lib: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js",
+        worker: "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+      },
+      {
+        name: "unpkg",
+        lib: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js",
+        worker: "https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js"
+      },
+      {
+        name: "local",
+        lib: "./vendor/pdf.min.js",
+        worker: "./vendor/pdf.worker.min.js"
+      }
+    ];
+
+    const libStatus = document.getElementById("libStatus");
+
+    function loadScript(src){
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.async = true;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error("Fail load: " + src));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function tryLoad(i){
+      if (i >= candidates.length) {
+        libStatus.textContent = "PDF.js gagal load";
+        libStatus.style.borderColor = "rgba(255,90,106,.35)";
+        libStatus.style.background = "rgba(255,90,106,.18)";
+        alert("PDF.js gagal load. Jika rangkaian blok CDN, letak vendor/pdf.min.js dan vendor/pdf.worker.min.js dalam repo.");
+        return;
+      }
+      const c = candidates[i];
+      libStatus.textContent = "Cuba PDF.js: " + c.name;
+
+      try{
+        await loadScript(c.lib);
+        if (!window.pdfjsLib) throw new Error("pdfjsLib not found selepas load");
+        window.pdfjsWorkerSrc = c.worker; // pass to app
+        libStatus.textContent = "PDF.js OK: " + c.name;
+        libStatus.style.borderColor = "rgba(67,209,158,.35)";
+        libStatus.style.background = "rgba(67,209,158,.18)";
+        // Start the app (defined in database.js)
+        if (window.initPdfApp) window.initPdfApp();
+        return;
+      }catch(e){
+        console.warn(e);
+        return tryLoad(i+1);
+      }
+    }
+
+    // Load app code first (safe), then load PDF.js, then init
+  </script>
   <script src="./database.js"></script>
+  <script>
+    tryLoad(0);
+  </script>
 </body>
 </html>
