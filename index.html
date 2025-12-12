@@ -3,15 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Reader Buku Pengurusan</title>
+  <title>Reader Buku Pengurusan (PDF.js)</title>
   <meta name="theme-color" content="#0b1220" />
   <style>
     :root{
       --bg:#0b1220; --panel:#0f1a33; --panel2:#0b1530; --text:#e8eefc; --muted:#9fb2d9;
-      --accent:#4ea1ff; --danger:#ff5a6a; --ok:#43d19e; --line:rgba(255,255,255,.09);
+      --accent:#4ea1ff; --danger:#ff5a6a; --line:rgba(255,255,255,.09);
       --shadow: 0 10px 30px rgba(0,0,0,.25);
       --radius: 14px;
-      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -39,7 +39,7 @@
       padding:10px 12px;border-radius:999px;border:1px solid var(--line);
       background:rgba(15,26,51,.6);
     }
-    input[type="search"], input[type="text"]{
+    input[type="text"], input[type="search"]{
       border:0;outline:0;background:transparent;color:var(--text);font-size:14px;
     }
     .btn{
@@ -53,9 +53,8 @@
       user-select:none;
     }
     .btn:hover{transform:translateY(-1px); background:rgba(15,26,51,.9)}
-    .btn:active{transform:translateY(0px)}
-    .btn.primary{background:rgba(78,161,255,.18);border-color:rgba(78,161,255,.35)}
     .btn.small{padding:8px 10px;border-radius:10px;font-size:13px}
+    .btn.primary{background:rgba(78,161,255,.18);border-color:rgba(78,161,255,.35)}
     .main{flex:1;display:grid;grid-template-columns: 360px 1fr; gap:14px; padding:14px; min-height:0}
     aside{
       min-height:0;
@@ -107,48 +106,44 @@
     .viewerTop .left, .viewerTop .right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
     .stat{font-size:12px;color:var(--muted)}
     .viewerBody{flex:1;min-height:0;overflow:auto;padding:12px}
-    .frameWrap{
-      height:100%;
+    .canvasWrap{
+      width:100%;
+      min-height:100%;
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
       border-radius:16px;
-      overflow:hidden;
+      overflow:auto;
       border:1px solid rgba(255,255,255,.07);
       background:rgba(0,0,0,.22);
+      padding:12px;
     }
-    iframe{
-      width:100%;
-      height:100%;
-      border:0;
-      background:#fff;
-    }
-    .help{padding:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;line-height:1.45}
+    canvas{background:#fff;border-radius:10px;box-shadow: 0 10px 22px rgba(0,0,0,.25)}
     .hidden{display:none !important}
-    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
-      font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,.14);border-bottom-width:2px;border-radius:8px;background:rgba(255,255,255,.06);color:var(--text)}
     @media (max-width: 1000px){
       .main{grid-template-columns: 1fr}
       .brand{min-width:auto}
     }
   </style>
+
+  <!-- PDF.js UMD (ada pdfjsLib global) -->
+  <script src="https://unpkg.com/pdfjs-dist@2.0.489/build/pdf.min.js"></script>
 </head>
+
 <body>
   <div class="app">
     <header>
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div class="titleWrap">
-          <div class="title">Reader Buku Pengurusan</div>
-          <div class="subtitle">Klik isi kandungan untuk lompat ke muka surat (versi paling stabil, tanpa PDF.js)</div>
+          <div class="title">Reader Buku Pengurusan (PDF.js)</div>
+          <div class="subtitle">Klik isi kandungan untuk lompat tepat ke muka surat</div>
         </div>
       </div>
 
       <div class="controls">
-        <div class="pill" title="Tip: guna Ctrl+F dalam PDF (atau butang carian di viewer PDF)">
-          <span style="color:var(--muted);font-size:12px">Cari</span>
-          <input id="q" type="search" placeholder="Tip: tekan Ctrl+F dalam PDF..." style="width:min(460px,52vw)" />
-          <button id="btnFindTip" class="btn small primary" title="Tunjuk cara cari">Tip</button>
-        </div>
-        <button id="btnOpenNative" class="btn">Buka PDF</button>
-        <button id="btnHelp" class="btn">Bantuan</button>
+        <button id="btnOpenPdf" class="btn">Buka PDF</button>
+        <button id="btnFit" class="btn">Fit</button>
       </div>
     </header>
 
@@ -159,7 +154,7 @@
             <button class="tab active" data-tab="toc">Isi Kandungan</button>
             <button class="tab" data-tab="pantas">Pantas</button>
           </div>
-          <span id="status" class="badge">Sedia</span>
+          <span id="status" class="badge">Loading…</span>
         </div>
 
         <div class="asideBody">
@@ -169,27 +164,6 @@
               <button type="button"><span>Lompat pantas</span><span class="muted">klik</span></button>
               <div class="sectionBody" id="quickLinks"></div>
             </div>
-            <div class="section">
-              <button type="button"><span>Fail</span><span class="muted">PDF</span></button>
-              <div class="sectionBody" style="padding:10px">
-                <div style="font-size:12px;color:var(--muted);line-height:1.5">
-                  Nama fail: <span class="kbd">BUKU_PENGURUSAN_2021.pdf</span><br>
-                  Jika guna GitHub Pages, pastikan fail ini ada dalam root folder repo.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="help hidden" id="helpBox">
-          <div style="font-weight:800;color:var(--text);margin-bottom:8px">Cara guna</div>
-          <div style="margin-bottom:10px">
-            1) Klik item dalam <span class="kbd">Isi Kandungan</span> untuk lompat muka surat.<br/>
-            2) Untuk cari perkataan dalam PDF: klik pada area PDF, kemudian tekan <span class="kbd">Ctrl</span>+<span class="kbd">F</span> (Windows) / <span class="kbd">⌘</span>+<span class="kbd">F</span> (Mac).<br/>
-            3) Butang <span class="kbd">Buka PDF</span> akan buka PDF dalam tab baru.
-          </div>
-          <div>
-            Pintasan: <span class="kbd">←</span>/<span class="kbd">→</span> (page), <span class="kbd">+</span>/<span class="kbd">-</span> (zoom), <span class="kbd">Esc</span> (tutup bantuan).
           </div>
         </div>
       </aside>
@@ -199,17 +173,19 @@
           <div class="left">
             <button id="prev" class="btn small">◀</button>
             <button id="next" class="btn small">▶</button>
+
             <div class="pill">
               <span class="stat">Muka</span>
               <input id="pageNum" inputmode="numeric" style="width:64px" />
               <span class="stat" id="pageNote">/ -</span>
             </div>
           </div>
+
           <div class="right">
             <button id="zoomOut" class="btn small">-</button>
             <div class="pill">
               <span class="stat">Zoom</span>
-              <input id="zoom" type="range" min="70" max="180" value="110" />
+              <input id="zoom" type="range" min="60" max="200" value="110" />
               <span class="stat" id="zoomLabel">110%</span>
             </div>
             <button id="zoomIn" class="btn small">+</button>
@@ -217,8 +193,8 @@
         </div>
 
         <div class="viewerBody">
-          <div class="frameWrap">
-            <iframe id="pdfFrame" title="PDF Viewer"></iframe>
+          <div class="canvasWrap" id="canvasWrap">
+            <canvas id="pdfCanvas"></canvas>
           </div>
         </div>
       </section>
