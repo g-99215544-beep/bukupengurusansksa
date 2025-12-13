@@ -194,37 +194,82 @@
                 // Render PDF page
                 await page.render({ canvasContext: ctx, viewport }).promise;
                 
-                // Highlight nama guru jika ada
+                // Highlight nama guru jika ada - HANYA nama yang TEPAT
                 if (highlightName) {
                     const textContent = await page.getTextContent();
                     
-                    // Pecahkan nama kepada perkataan untuk carian
-                    const searchWords = highlightName.toUpperCase().split(' ').filter(w => w.length > 2);
+                    // Ambil nama penuh untuk matching tepat
+                    // Contoh: "PN. HJH. AIDAH BINTI SULAIMAN" -> cari "AIDAH", "SULAIMAN", atau nama penuh
+                    const nameParts = highlightName.toUpperCase().split(' ');
+                    // Ambil nama utama (biasanya selepas gelaran seperti PN., EN., CIK, HJH.)
+                    const mainNames = nameParts.filter(part => 
+                        !['PN.', 'EN.', 'CIK', 'HJH.', 'HJ.', 'BINTI', 'BIN', 'B.', 'BT.', 'BT', '@'].includes(part) &&
+                        part.length > 2
+                    );
                     
                     textContent.items.forEach((item) => {
                         const itemText = item.str.toUpperCase().trim();
                         
-                        // Cari jika mana-mana perkataan dalam nama ditemui
-                        const found = searchWords.some(word => itemText.includes(word));
+                        // HANYA highlight jika text SAMA TEPAT dengan salah satu nama utama
+                        const isExactMatch = mainNames.some(name => {
+                            // Exact match atau itemText mengandungi nama penuh
+                            return itemText === name || 
+                                   itemText.includes(name) && itemText.length < name.length + 10;
+                        });
                         
-                        if (found && itemText.length > 1) {
-                            // Dapatkan posisi text menggunakan transform matrix
+                        if (isExactMatch && itemText.length > 2) {
                             const [a, b, c, d, e, f] = item.transform;
                             const x = e * scale;
                             const y = canvas.height - (f * scale) - (item.height * scale);
                             const width = item.width * scale;
                             const height = item.height * scale * 1.3;
                             
-                            // Lukis highlight kuning terang
-                            ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+                            // Highlight kuning terang
+                            ctx.fillStyle = 'rgba(255, 200, 0, 0.6)';
                             ctx.fillRect(x - 2, y - 2, width + 4, height + 4);
                             
-                            // Lukis border oren
+                            // Border oren tebal
                             ctx.strokeStyle = '#f59e0b';
-                            ctx.lineWidth = 2;
+                            ctx.lineWidth = 3;
                             ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
                         }
                     });
+                }
+            };
+
+            // Swipe/Touch handlers untuk tukar page
+            const touchStartY = useRef(0);
+            const touchEndY = useRef(0);
+            
+            const handleTouchStart = (e) => {
+                touchStartY.current = e.touches[0].clientY;
+            };
+            
+            const handleTouchEnd = (e) => {
+                touchEndY.current = e.changedTouches[0].clientY;
+                const diff = touchStartY.current - touchEndY.current;
+                
+                // Swipe up = next page, Swipe down = previous page
+                if (Math.abs(diff) > 50) { // minimum 50px swipe
+                    if (diff > 0 && currentPage < totalPages) {
+                        // Swipe UP - next page
+                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                    } else if (diff < 0 && currentPage > 1) {
+                        // Swipe DOWN - previous page
+                        setCurrentPage(prev => Math.max(prev - 1, 1));
+                    }
+                }
+            };
+            
+            // Mouse wheel handler untuk desktop
+            const handleWheel = (e) => {
+                e.preventDefault();
+                if (e.deltaY > 30 && currentPage < totalPages) {
+                    // Scroll down - next page
+                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+                } else if (e.deltaY < -30 && currentPage > 1) {
+                    // Scroll up - previous page
+                    setCurrentPage(prev => Math.max(prev - 1, 1));
                 }
             };
 
@@ -290,7 +335,7 @@
                     {/* BUKU TAB - PDF Viewer Full Screen */}
                     {activeTab === 'buku' && (
                         <div className="flex-1 flex flex-col min-h-0">
-                            {/* Mini Controls */}
+                            {/* Mini Controls - Tanpa butang, swipe untuk navigate */}
                             <div className="bg-gray-800 px-2 py-1.5 flex items-center justify-between gap-2">
                                 <button 
                                     onClick={() => setShowNav(!showNav)}
@@ -303,18 +348,22 @@
                                 {highlightName && (
                                     <div className="flex items-center gap-1 bg-yellow-500 text-yellow-900 px-2 py-1 rounded text-xs font-medium animate-pulse truncate max-w-[120px]">
                                         <span>🔍</span>
-                                        <span className="truncate">{highlightName.split(' ')[1]}</span>
+                                        <span className="truncate">{highlightName.split(' ').find(p => !['PN.','EN.','CIK','HJH.','BINTI','BIN'].includes(p) && p.length > 2) || highlightName.split(' ')[1]}</span>
                                         <button onClick={() => setHighlightName('')} className="ml-1 font-bold hover:text-yellow-700">✕</button>
                                     </div>
                                 )}
                                 
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                    <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1} className="w-8 h-8 bg-gray-700 rounded text-white disabled:opacity-40">←</button>
-                                    <div className="bg-gray-700 px-2 py-1 rounded text-white text-sm min-w-[70px] text-center">
+                                {/* Page indicator dengan hint swipe */}
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    <div className="bg-gray-700 px-3 py-1.5 rounded text-white text-sm font-medium">
                                         {currentPage} / {totalPages}
                                     </div>
-                                    <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages} className="w-8 h-8 bg-gray-700 rounded text-white disabled:opacity-40">→</button>
                                 </div>
+                            </div>
+                            
+                            {/* Swipe hint */}
+                            <div className="bg-gray-700 text-gray-400 text-xs text-center py-1">
+                                ↑ Swipe untuk tukar muka surat ↓
                             </div>
 
                             {/* Navigation Dropdown */}
@@ -344,8 +393,15 @@
                                 </div>
                             )}
 
-                            {/* PDF Canvas - FULL HEIGHT */}
-                            <div ref={containerRef} className="flex-1 overflow-auto bg-gray-800 p-2" onClick={() => showNav && setShowNav(false)}>
+                            {/* PDF Canvas - FULL HEIGHT dengan Swipe Navigation */}
+                            <div 
+                                ref={containerRef} 
+                                className="flex-1 overflow-hidden bg-gray-800 p-2 flex items-center justify-center" 
+                                onClick={() => showNav && setShowNav(false)}
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
+                                onWheel={handleWheel}
+                            >
                                 {isLoading ? (
                                     <div className="h-full flex flex-col items-center justify-center">
                                         <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
