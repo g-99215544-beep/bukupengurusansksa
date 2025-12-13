@@ -197,27 +197,32 @@
                 // Highlight nama guru jika ada
                 if (highlightName) {
                     const textContent = await page.getTextContent();
-                    const searchName = highlightName.toUpperCase();
                     
-                    // Cari semua text items yang mengandungi nama
+                    // Pecahkan nama kepada perkataan untuk carian
+                    const searchWords = highlightName.toUpperCase().split(' ').filter(w => w.length > 2);
+                    
                     textContent.items.forEach((item) => {
-                        const itemText = item.str.toUpperCase();
-                        if (itemText.includes(searchName) || searchName.includes(itemText)) {
-                            // Dapatkan posisi text
-                            const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
-                            const x = tx[4];
-                            const y = tx[5] - (item.height * scale);
+                        const itemText = item.str.toUpperCase().trim();
+                        
+                        // Cari jika mana-mana perkataan dalam nama ditemui
+                        const found = searchWords.some(word => itemText.includes(word));
+                        
+                        if (found && itemText.length > 1) {
+                            // Dapatkan posisi text menggunakan transform matrix
+                            const [a, b, c, d, e, f] = item.transform;
+                            const x = e * scale;
+                            const y = canvas.height - (f * scale) - (item.height * scale);
                             const width = item.width * scale;
-                            const height = item.height * scale * 1.2;
+                            const height = item.height * scale * 1.3;
                             
-                            // Lukis highlight kuning
-                            ctx.fillStyle = 'rgba(255, 255, 0, 0.4)';
-                            ctx.fillRect(x, y, width, height + 5);
+                            // Lukis highlight kuning terang
+                            ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+                            ctx.fillRect(x - 2, y - 2, width + 4, height + 4);
                             
-                            // Lukis border
-                            ctx.strokeStyle = 'rgba(255, 200, 0, 0.8)';
+                            // Lukis border oren
+                            ctx.strokeStyle = '#f59e0b';
                             ctx.lineWidth = 2;
-                            ctx.strokeRect(x, y, width, height + 5);
+                            ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
                         }
                     });
                 }
@@ -312,7 +317,4 @@
                                 </div>
                             </div>
 
-                            {/* Navigation Dropdown */}
-                            {showNav && (
-                                <div className="absolute top-24 left-2 right-2 bg-white rounded-xl shadow-2xl z-40 max-h-[60vh] overflow-y-auto animate-fadeIn">
-                                    <di
+    
