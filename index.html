@@ -445,10 +445,28 @@
 
         const extractMainName = (fullName) => {
             const parts = fullName.toUpperCase().split(' ');
+            // Kecualikan gelaran, kata hubung, DAN nama umum seperti SITI, NUR, MOHD, dll
+            const commonNames = ['SITI', 'NUR', 'NURUL', 'MUHAMMAD', 'AHMAD', 'ABU', 'ABDUL'];
+            const excludeWords = ['PN.', 'EN.', 'CIK', 'HJH.', 'HJ.', 'BINTI', 'BIN', 'B.', 'BT.', '@', 'ABD', 'MOHD', 'MOHAMED', 'MOHAMAD', ...commonNames];
+            
             const filtered = parts.filter(part => 
-                !['PN.', 'EN.', 'CIK', 'HJH.', 'HJ.', 'BINTI', 'BIN', 'B.', 'BT.', '@', 'ABD', 'MOHD', 'MOHAMED', 'MOHAMAD'].includes(part) && part.length > 2
+                !excludeWords.includes(part) && part.length > 2
             );
-            return filtered[0] || parts[1] || '';
+            
+            // Jika ada nama yang bukan umum, guna nama itu
+            // Jika semua nama adalah umum, guna nama kedua atau ketiga
+            if (filtered.length > 0) {
+                return filtered[0];
+            }
+            
+            // Fallback: cari nama yang bukan dalam excludeWords
+            for (let i = 1; i < parts.length; i++) {
+                if (parts[i].length > 2 && !['BINTI', 'BIN', 'B.', 'BT.', '@'].includes(parts[i])) {
+                    return parts[i];
+                }
+            }
+            
+            return parts[1] || '';
         };
 
         function App() {
