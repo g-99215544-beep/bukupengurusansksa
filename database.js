@@ -3,13 +3,9 @@ const PDF_URL = "./BUKU_PENGURUSAN_2021.pdf";
 /**
  * MANUAL OVERRIDE (OPTIONAL)
  * Jika ada guru tak detect / typo besar / perlu tambah tugas:
- * {
- *   name: "Cikgu Abu Bakar bin Ali",
- *   roles: [{ label:"Penyelaras HEM", pages:[84] }, { label:"AJK ICT", pages:[60] }]
- * }
  */
 const TEACHERS_MANUAL = [
-  // { name: "Cikgu Abu Bakar bin Ali", roles: [{ label:"Penyelaras HEM", pages:[84] }] },
+  // Contoh: { name: "Cikgu Abu Bakar bin Ali", roles: [{ label:"Penyelaras HEM", pages:[84] }] },
 ];
 
 /** Kata kunci peranan untuk bantu extract dari baris */
@@ -20,13 +16,11 @@ const ROLE_KEYWORDS = [
   "Data", "ICT", "Disiplin", "Kebajikan", "SPBT", "RMT", "PBS", "PBD"
 ];
 
-// Token biasa yang terlalu common (untuk elak merge tersalah)
 const COMMON_NAME_TOKENS = new Set([
   "mohd","mohamad","muhammad","abdul","bin","binti","bt","b","bte",
   "nur","siti","nor","noor","muhd","ahmad"
 ]);
 
-// Perkataan/abbrev yang kerap tersangkut pada hujung nama (sebenarnya jawatan/bidang)
 const TRAILING_NON_NAME_TOKENS = new Set([
   "kp","k.p","gpk","ppp","dg","dga","dgb",
   "hem","kurikulum","kokurikulum","ppki","ppkip","prasekolah",
@@ -40,8 +34,8 @@ function isProbablyNonNameToken(tok){
   if (!tok) return false;
   const t = tok.toLowerCase();
   if (TRAILING_NON_NAME_TOKENS.has(t)) return true;
-  if (/^[A-Z]{2,6}$/.test(tok)) return true;      // APDM, SSDM, ICT
-  if (tok.includes("/")) return true;             // Data/APDM
+  if (/^[A-Z]{2,6}$/.test(tok)) return true;
+  if (tok.includes("/")) return true;
   if (/^\d+$/.test(tok)) return true;
   return false;
 }
@@ -58,7 +52,7 @@ function trimTrailingNonNameWords(name){
   return parts.join(" ").trim();
 }
 
-/** Isi kandungan statik (boleh edit ikut buku anda) */
+/** Isi kandungan statik */
 const TOC = [
   { group: "Maklumat Umum", items: [
     { title: "Isi Kandungan", start: 1, end: 1 },
@@ -90,11 +84,11 @@ const TOC = [
   { group: "Pengurusan Kurikulum", items: [
     { title: "Carta Organisasi Kurikulum", start: 67, end: 67 },
     { title: "Majlis Pengurusan Kurikulum", start: 68, end: 74 },
-    { title: "Jadual Penyeliaan PdPc (Pencerapan Guru)", start: 75, end: 75 },
+    { title: "Jadual Penyeliaan PdPc", start: 75, end: 75 },
     { title: "Jadual Penyeliaan HKM", start: 76, end: 76 },
     { title: "Takwim PBS & Modul UPSR", start: 77, end: 77 },
     { title: "Pencapaian UPSR", start: 78, end: 78 },
-    { title: "Giliran Bertugas GPK Semasa Cuti", start: 79, end: 79 },
+    { title: "Giliran Bertugas GPK", start: 79, end: 79 },
   ]},
   { group: "Pengurusan Hal Ehwal Murid", items: [
     { title: "Carta Organisasi HEM", start: 80, end: 80 },
@@ -132,7 +126,7 @@ const els = {
   tabToc: document.getElementById("tab-toc"),
   quickLinks: document.getElementById("quickLinks"),
 
-  // Guru
+  // Guru - MODIFIED ELEMENTS
   teacherIndexStatus: document.getElementById("teacherIndexStatus"),
   btnReindex: document.getElementById("btnReindex"),
   teacherSelect: document.getElementById("teacherSelect"),
@@ -140,7 +134,6 @@ const els = {
   teacherHint: document.getElementById("teacherHint"),
   teacherChips: document.getElementById("teacherChips"),
 
-  // Viewer
   pagesWrap: document.getElementById("pagesWrap"),
   pages: document.getElementById("pages"),
   pageNow: document.getElementById("pageNow"),
@@ -156,16 +149,14 @@ let pdfDoc = null;
 let fitMode = true;
 let zoomPct = 110;
 
-let pageState = new Map(); // pageNum -> { renderedScaleKey, canvas, rendering }
+let pageState = new Map();
 let currentVisiblePage = 1;
 let intersectionObserver = null;
 let visibleObserver = null;
 
 let TEACHER_INDEX = null;
 let teacherSelected = null;
-
-// highlight state
-let ACTIVE_HIGHLIGHT = null; // { page, aliases:[{key,tokens}] }
+let ACTIVE_HIGHLIGHT = null;
 
 /* ====== Helpers ====== */
 function setStatus(txt){ if (els.status) els.status.textContent = txt; }
@@ -212,9 +203,9 @@ function buildTocUI(){
       row.innerHTML = `
         <div>
           <div class="name">${escapeHtml(it.title)}</div>
-          <div class="meta">m/s ${it.start}${it.start===it.end ? "" : ("–"+it.end)}</div>
+          <div class="meta">m/s ${it.start}${it.start===it.end ? "" : ("—"+it.end)}</div>
         </div>
-        <div class="badge">${it.start===it.end ? it.start : (it.start+"–"+it.end)}</div>
+        <div class="badge">${it.start===it.end ? it.start : (it.start+"—"+it.end)}</div>
       `;
       row.addEventListener("click", () => {
         document.querySelectorAll(".tocItem").forEach(x => x.classList.remove("active"));
@@ -296,7 +287,7 @@ function getFitZoomPctForPage(page, containerWidth){
   return clamp(Math.floor(scale * 100), 60, 200);
 }
 
-/* ===== Highlight (simulate bold) ===== */
+/* ===== Highlight ===== */
 function clearHighlightsEverywhere(){
   document.querySelectorAll(".hlLayer").forEach(x => x.remove());
 }
@@ -305,6 +296,19 @@ function setActiveHighlight(aliases, page){
   if (!aliases || !aliases.length) { ACTIVE_HIGHLIGHT = null; return; }
   ACTIVE_HIGHLIGHT = { page: Number(page), aliases };
 }
+
+function normalizeForMatch(s){
+  let x = String(s||"").toLowerCase().trim();
+  try { x = x.normalize("NFKD").replace(/[\u0300-\u036f]/g, ""); } catch(e){}
+  x = x.replace(/\b(mohamad|mohammad|muhamad|muhammad|mohd\.|muhd\.)\b/g, "mohd");
+  x = x.replace(/\b(abd)\b/g, "abdul");
+  x = x.replace(/\b(bin|binti|bt|bte|b\.)\b/gi, " ");
+  x = x.replace(/[^a-z0-9\s]/g, " ");
+  x = x.replace(/\s+/g, " ").trim();
+  return x;
+}
+
+const LONG_MATCH_EXCLUDE = new Set(["guru","kelas","panitia"]);
 
 async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
   if (!ACTIVE_HIGHLIGHT || ACTIVE_HIGHLIGHT.page !== pageNum) return;
@@ -318,8 +322,7 @@ async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
   const textContent = await page.getTextContent({ disableCombineTextItems: false });
   const items = textContent.items || [];
 
-  // group into lines by y
-  const lines = new Map(); // yKey -> [{x,it}]
+  const lines = new Map();
   for (const it of items){
     const str = (it.str || "").trim();
     if (!str) continue;
@@ -332,7 +335,7 @@ async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
   }
   const ys = Array.from(lines.keys()).sort((a,b)=> b-a);
 
-  function highlightItem(it, str, tokensSet){
+  function highlightItem(it, str){
     const tx = pdfjsLib.Util.transform(viewport.transform, it.transform);
     const fontH = Math.max(8, Math.hypot(tx[2], tx[3]));
     const left = tx[4];
@@ -360,7 +363,6 @@ async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
 
     const lineKey = normalizeForMatch(lineText);
 
-    // match any alias (prefer longer)
     let matchedAlias = null;
     for (const alias of ACTIVE_HIGHLIGHT.aliases){
       if (alias.key && lineKey.includes(alias.key)){
@@ -372,13 +374,11 @@ async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
 
     const tokensSet = new Set(matchedAlias.tokens);
 
-    // highlight pieces on this line
     for (const r of row){
       const str = (r.it.str || "").trim();
       if (!str) continue;
       const partKey = normalizeForMatch(str);
 
-      // highlight if exact token match or strong substring match (lebih tahan typo)
       let match = false;
       if (tokensSet.has(partKey)) match = true;
       else{
@@ -390,7 +390,7 @@ async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
       }
       if (!match) continue;
 
-      any = highlightItem(r.it, str, tokensSet) || any;
+      any = highlightItem(r.it, str) || any;
     }
   }
 
@@ -527,147 +527,18 @@ function setFitMode(){
   }, 50);
 }
 
-/* ====== Dedup names (typo handling, lebih agresif) ====== */
-const HONORIFIC_RE = /^(pn\.|puan|en\.|encik|cikgu|cg\.|ckg\.|ckg|ustazah|ustaz|tn\.?\s*hj\.?|tn\.?\s*hjh\.?|hj\.|hjh\.)\s+/i;
-const BIN_RE = /\b(bin|binti|bt|bte|b\.)\b/gi;
-
-// token awal yang sangat common; jika token pertama common, guna 2 token awal untuk signatur
-const COMMON_FIRST = new Set(["nur","noor","nor","siti","mohd","muhd","muhammad","mohamad","mohammad","abdul","ahmad","muhd."]);
-// token akhir yang common; jika token akhir common, guna 2 token akhir
-const COMMON_LAST = new Set(["mohd","abdul","bakar","ahmad","muhammad"]);
-
-function stripHonorific(s){
-  return String(s||"").replace(HONORIFIC_RE, "").trim();
-}
-function removeBinBintiTokens(s){
-  return String(s||"").replace(BIN_RE, " ").replace(/\s+/g," ").trim();
-}
-function normalizeForMatch(s){
-  let x = stripHonorific(String(s||"").toLowerCase());
-
-  // buang diacritics
-  try { x = x.normalize("NFKD").replace(/[\u0300-\u036f]/g, ""); } catch(e){}
-
-  // samakan variasi lazim
-  x = x
-    .replace(/\b(mohamad|mohammad|muhamad|muhammad|mohd\.|muhd\.)\b/g, "mohd")
-    .replace(/\b(abd)\b/g, "abdul")
-    .replace(/\b(nor)\b/g, "nor") // kekal
-    .replace(/\b(noor)\b/g, "noor");
-
-  // buang bin/binti/bt
-  x = removeBinBintiTokens(x);
-
-  // buang tanda baca
-  x = x.replace(/[^a-z0-9\s]/g, " ");
-  x = x.replace(/\s+/g, " ").trim();
-
-  return x;
-}
-
-function nameTokens(s){
-  const toks = normalizeForMatch(s).split(" ").filter(Boolean);
-  return toks;
-}
-
-function tokenSet(s){
-  return new Set(nameTokens(s).filter(t => t.length >= 2));
-}
-function tokenOverlapScore(a,b){
-  const A = tokenSet(a);
-  const B = tokenSet(b);
-  if (!A.size || !B.size) return 0;
-  let inter = 0;
-  for (const t of A) if (B.has(t)) inter++;
-  return inter / Math.max(A.size, B.size);
-}
-
-function levenshtein(a, b){
-  a = String(a||""); b = String(b||"");
-  const m = a.length, n = b.length;
-  if (!m) return n;
-  if (!n) return m;
-  const dp = new Array(n+1);
-  for (let j=0;j<=n;j++) dp[j] = j;
-  for (let i=1;i<=m;i++){
-    let prev = dp[0];
-    dp[0] = i;
-    for (let j=1;j<=n;j++){
-      const tmp = dp[j];
-      const cost = a[i-1] === b[j-1] ? 0 : 1;
-      dp[j] = Math.min(
-        dp[j] + 1,
-        dp[j-1] + 1,
-        prev + cost
-      );
-      prev = tmp;
-    }
-  }
-  return dp[n];
-}
-
-function similarity(a,b){
-  a = normalizeForMatch(a);
-  b = normalizeForMatch(b);
-  if (!a || !b) return 0;
-  if (a === b) return 1;
-  const dist = levenshtein(a,b);
-  return 1 - dist / Math.max(a.length, b.length);
-}
-
-function firstKey(tokens){
-  if (!tokens.length) return "";
-  if (COMMON_FIRST.has(tokens[0]) && tokens.length >= 2) return `${tokens[0]} ${tokens[1]}`;
-  return tokens[0];
-}
-function lastKey(tokens){
-  if (!tokens.length) return "";
-  const last = tokens[tokens.length-1];
-  if (COMMON_LAST.has(last) && tokens.length >= 2) return `${tokens[tokens.length-2]} ${last}`;
-  return last;
-}
-function lastKeySimilar(aLast, bLast){
-  if (!aLast || !bLast) return false;
-  if (aLast === bLast) return true;
-  return similarity(aLast, bLast) >= 0.88;
-}
-
+/* ====== Name matching helpers (simplified) ====== */
 function shouldMergeName(a,b){
   const na = normalizeForMatch(a);
   const nb = normalizeForMatch(b);
   if (!na || !nb) return false;
   if (na === nb) return true;
-
-  const ta = nameTokens(a);
-  const tb = nameTokens(b);
-  if (!ta.length || !tb.length) return false;
-
-  const A = new Set(ta);
-  const B = new Set(tb);
-
-  const inter = [];
-  for (const t of A) if (B.has(t)) inter.push(t);
-  const interNonCommon = inter.filter(t => !COMMON_NAME_TOKENS.has(t));
-
-  // RULE UTAMA: jika 3 token sama -> orang sama
-  if (interNonCommon.length >= 3) return true;
-
-  // Jika 2 token sama -> biasanya orang sama (sebab extra perkataan selalunya jawatan)
-  if (interNonCommon.length >= 2){
-    const sim = similarity(a,b);
-    const la = lastKey(ta), lb = lastKey(tb);
-    const sigSame = (firstKey(ta) === firstKey(tb) && lastKeySimilar(la, lb));
-
-    if (sigSame || sim >= 0.86) return true;
-    if (Math.max(ta.length, tb.length) >= 4) return true; // nama + extra jawatan
-  }
-
-  // fallback: typo kecil keseluruhan
-  const ov = tokenOverlapScore(a,b);
-  const sim = similarity(a,b);
-  if (sim >= 0.92 && ov >= 0.70) return true;
-
-  return false;
+  
+  const ta = na.split(" ").filter(Boolean);
+  const tb = nb.split(" ").filter(Boolean);
+  
+  const commonTokens = ta.filter(t => tb.includes(t) && !COMMON_NAME_TOKENS.has(t));
+  return commonTokens.length >= 2;
 }
 
 function dedupTeachers(raw){
@@ -690,10 +561,7 @@ function dedupTeachers(raw){
   const merged = clusters.map(c => {
     let canon = c.variants[0];
     for (const v of c.variants){
-      const vc = v.count || 0;
-      const cc = canon.count || 0;
-      if (vc > cc) canon = v;
-      else if (vc === cc && v.name.length > canon.name.length) canon = v;
+      if ((v.count || 0) > (canon.count || 0)) canon = v;
     }
 
     const pages = new Set();
@@ -726,54 +594,29 @@ function dedupTeachers(raw){
     };
   });
 
-  // final pass: gabung lagi jika masih bertindih (untuk kes typo kuat)
-  const out = [];
-  for (const t of merged.sort((a,b)=> a.name.localeCompare(b.name, "ms"))){
-    const found = out.find(x => shouldMergeName(x.name, t.name));
-    if (!found){
-      out.push(t);
-      continue;
-    }
-    // merge t -> found
-    const pset = new Set(found.pages);
-    t.pages.forEach(p => pset.add(p));
-    found.pages = Array.from(pset).sort((a,b)=>a-b);
-
-    const roleMap = new Map();
-    (found.roles||[]).forEach(r => roleMap.set(r.label, new Set(r.pages||[])));
-    (t.roles||[]).forEach(r => {
-      if (!roleMap.has(r.label)) roleMap.set(r.label, new Set());
-      (r.pages||[]).forEach(p => roleMap.get(r.label).add(p));
-    });
-    found.roles = Array.from(roleMap.entries()).map(([label,set])=>({label,pages:Array.from(set).sort((a,b)=>a-b)}))
-      .sort((a,b)=> a.label.localeCompare(b.label, "ms"));
-
-    const aliasSet = new Set((found.aliases||[]).map(a=>a.key));
-    (t.aliases||[]).forEach(a=>aliasSet.add(a.key));
-    const aliasList2 = Array.from(aliasSet).filter(Boolean).sort((a,b)=> b.length - a.length);
-    found.aliases = aliasList2.map(key => ({ key, tokens: key.split(" ").filter(x=>x.length>=2) }));
-
-    found.count = (found.count||0) + (t.count||0);
-  }
-
-  return out;
+  return merged.sort((a,b)=> a.name.localeCompare(b.name, "ms"));
 }
-/* ====== Guru Index (auto detect) ====== */
-const NAME_REGEX = new RegExp(
-  "\\b(?:(?:Pn\\.|Puan|En\\.|Encik|Cikgu|Cg\\.|Ckg\\.|Ustazah|Ustaz|Tn\\.?\\s*Hj\\.?|Tn\\.?\\s*Hjh\\.?|Hj\\.|Hjh\\.)\\s+)" +
-  "(?:[A-Za-zÀ-ÿ'’\\-\\.]+\\s+){0,10}[A-Za-zÀ-ÿ'’\\-\\.]+",
-  "gi"
-);
+
+/* ====== Extract teacher names from PDF ====== */
+const NAME_REGEX = /\b(?:(?:Pn\.|Puan|En\.|Encik|Cikgu|Cg\.|Ckg\.|Ustazah|Ustaz|Tn\.?\s*Hj\.?|Tn\.?\s*Hjh\.?|Hj\.|Hjh\.)\s+)(?:[A-Za-zÀ-ÿ''\-\.]+\s+){0,10}[A-Za-zÀ-ÿ''\-\.]+/gi;
+
+function cleanName(s){
+  let x = String(s||"").replace(/\s+/g," ").trim();
+  x = x.replace(/\bb\.\b/gi, "bin").replace(/\bbt\.\b/gi, "binti").replace(/\bbte\.\b/gi, "binti");
+  x = x.replace(/[,:;)\]]+$/g, "").trim();
+  x = trimTrailingNonNameWords(x);
+  return x;
+}
 
 function extractLinesFromTextContent(textContent){
   const items = (textContent && textContent.items) ? textContent.items : [];
-  const groups = new Map(); // yKey -> [{x,str}]
+  const groups = new Map();
   for (const it of items){
     const str = (it.str || "").trim();
     if (!str) continue;
     const tr = it.transform || [];
-    const x = tr[4] ?? 0;
     const y = tr[5] ?? 0;
+    const x = tr[4] ?? 0;
     const yKey = Math.round(y / 3) * 3;
     if (!groups.has(yKey)) groups.set(yKey, []);
     groups.get(yKey).push({ x, str });
@@ -782,39 +625,31 @@ function extractLinesFromTextContent(textContent){
   const lines = [];
   for (const y of ys){
     const row = groups.get(y).sort((a,b)=> a.x - b.x);
-    const line = row.map(r => r.str).join(" ").replace(/\s+/g," ").trim();
+    const line = row.map(r => r.str).join(" ").replace(/\s+/g,"
+                                                       " ").trim();
     if (line) lines.push(line);
   }
   return lines;
 }
 
-function cleanName(s){
-  let x = String(s||"").replace(/\s+/g," ").trim();
-
-  // normalisasi ringkas: "b." -> "bin", "bt." -> "binti"
-  x = x.replace(/\bb\.\b/gi, "bin")
-       .replace(/\bbt\.\b/gi, "binti")
-       .replace(/\bbte\.\b/gi, "binti");
-
-  x = x.replace(/[,:;)\]]+$/g, "").trim();
-
-  // buang perkataan jawatan yang tersangkut di hujung (contoh: "APDM", "KP Bahasa Arab", "Makmal Bestari")
-  x = trimTrailingNonNameWords(x);
-
-  return x;
+function addRole(mapRoles, label, page){
+  if (!label) return;
+  const key = label.replace(/\s+/g," ").trim();
+  if (!key) return;
+  if (!mapRoles.has(key)) mapRoles.set(key, new Set());
+  mapRoles.get(key).add(page);
 }
 
-function looksLikeRoleHeader(line){
-  const L = line.trim();
-  const headerKeys = ["Pengerusi", "Timbalan", "Naib", "Setiausaha", "Bendahari", "Penyelaras", "Ketua Panitia", "Ketua", "Guru Kelas", "AJK", "Ahli Jawatankuasa"];
-  for (const hk of headerKeys){
-    const re = new RegExp(`^\\s*${hk}\\b`, "i");
-    if (re.test(L)){
-      const out = L.replace(/\s+/g," ").replace(/[–-]\s*$/,"").trim();
-      if (out.length <= 70) return out;
-    }
+function addTeacher(map, name, page){
+  const key = cleanName(name);
+  if (!key) return null;
+  if (!map.has(key)){
+    map.set(key, { pages: new Set(), roles: new Map(), count: 0 });
   }
-  return null;
+  const obj = map.get(key);
+  obj.pages.add(page);
+  obj.count += 1;
+  return obj;
 }
 
 function roleFromLine(line, name){
@@ -844,140 +679,12 @@ function roleFromLine(line, name){
   return null;
 }
 
-function addRole(mapRoles, label, page){
-  if (!label) return;
-  const key = label.replace(/\s+/g," ").trim();
-  if (!key) return;
-  if (!mapRoles.has(key)) mapRoles.set(key, new Set());
-  mapRoles.get(key).add(page);
-}
-
-function addTeacher(map, name, page){
-  const key = cleanName(name);
-  if (!key) return null;
-  if (!map.has(key)){
-    map.set(key, { pages: new Set(), roles: new Map(), count: 0 });
-  }
-  const obj = map.get(key);
-  obj.pages.add(page);
-  obj.count += 1;
-  return obj;
-}
-
-function mergeManualOverrides(autoMap, manual){
-  const m = new Map(autoMap);
-  for (const t of (manual || [])){
-    if (!t || !t.name) continue;
-    const targetKey = cleanName(t.name);
-
-    let existingKey = null;
-    for (const k of m.keys()){
-      if (normalizeForMatch(k) === normalizeForMatch(targetKey)){
-        existingKey = k; break;
-      }
-    }
-
-    const pagesSet = new Set();
-    const rolesMap = new Map();
-    let count = 0;
-
-    if (existingKey){
-      const obj = m.get(existingKey);
-      for (const p of obj.pages) pagesSet.add(p);
-      for (const [label, set] of obj.roles.entries()){
-        rolesMap.set(label, new Set(set));
-      }
-      count = obj.count || 0;
-    }
-
-    if (Array.isArray(t.roles)){
-      for (const r of t.roles){
-        if (!r || !r.label) continue;
-        if (!rolesMap.has(r.label)) rolesMap.set(r.label, new Set());
-        for (const p of (Array.isArray(r.pages) ? r.pages : [])){
-          const pp = Number(p);
-          if (Number.isFinite(pp)) {
-            pagesSet.add(pp);
-            rolesMap.get(r.label).add(pp);
-          }
-        }
-      }
-    }
-
-    m.set(targetKey, { pages: pagesSet, roles: rolesMap, count });
-    if (existingKey && existingKey !== targetKey) m.delete(existingKey);
-  }
-  return m;
-}
-
-function dedupTeachers(raw){
-  // raw: [{name, pages, roles, count}]
-  const clusters = [];
-  for (const t of raw){
-    let mergedInto = null;
-    for (const c of clusters){
-      if (shouldMergeName(t.name, c.name)){
-        mergedInto = c; break;
-      }
-    }
-    if (mergedInto){
-      mergedInto.variants.push(t);
-      mergedInto.totalCount += (t.count || 0);
-    }else{
-      clusters.push({ name: t.name, variants:[t], totalCount:(t.count || 0) });
-    }
-  }
-
-  const merged = clusters.map(c => {
-    // canonical: most occurrences, else longest name
-    let canon = c.variants[0];
-    for (const v of c.variants){
-      const vc = v.count || 0;
-      const cc = canon.count || 0;
-      if (vc > cc) canon = v;
-      else if (vc === cc && v.name.length > canon.name.length) canon = v;
-    }
-
-    const pages = new Set();
-    const roles = new Map();
-    const aliases = new Set();
-
-    for (const v of c.variants){
-      aliases.add(normalizeForMatch(v.name));
-      (v.pages || []).forEach(p => pages.add(p));
-      for (const r of (v.roles || [])){
-        if (!roles.has(r.label)) roles.set(r.label, new Set());
-        (r.pages || []).forEach(p => roles.get(r.label).add(p));
-      }
-    }
-
-    const roleArr = Array.from(roles.entries()).map(([label, set]) => ({
-      label,
-      pages: Array.from(set).sort((a,b)=>a-b)
-    })).sort((a,b)=> a.label.localeCompare(b.label, "ms"));
-
-    const aliasList = Array.from(aliases).filter(Boolean).sort((a,b)=> b.length - a.length);
-    const aliasObjs = aliasList.map(key => ({ key, tokens: key.split(" ").filter(t => t.length >= 2) }));
-
-    return {
-      name: canon.name,
-      count: c.totalCount,
-      pages: Array.from(pages).sort((a,b)=>a-b),
-      roles: roleArr,
-      aliases: aliasObjs
-    };
-  });
-
-  return merged.sort((a,b)=> a.name.localeCompare(b.name, "ms"));
-}
-
 async function buildTeacherIndexFromPdf(){
   if (!pdfDoc) return;
 
   const teacherMap = new Map();
   let anyText = false;
 
-  // bina range group dari TOC untuk map muka -> tajuk besar
   const groupRanges = (TOC || []).map(g => {
     const items = g.items || [];
     const minS = Math.min(...items.map(x => x.start));
@@ -999,62 +706,6 @@ async function buildTeacherIndexFromPdf(){
     return "UMUM";
   }
 
-  function hasNameToken(line){
-    return /\b(Pn\.|Puan|En\.|Encik|Cikgu|Cg\.|Ckg\.|Ustazah|Ustaz|Tn\.?\s*Hj\.?|Tn\.?\s*Hjh\.?|Hj\.|Hjh\.)\b/i.test(line);
-  }
-
-  function cleanHeading(s){
-    let x = String(s||"").replace(/\s+/g," ").trim();
-    x = x.replace(/^\s*\d+\s*[\.\)]\s*/,""); // buang 1. / 1)
-    x = x.replace(/\[[^\]]+\]/g,"").trim(); // buang [HEM]
-    x = x.replace(/\(\s*HEM\s*\)/gi,"").trim();
-    x = x.replace(/\s*-\s*$/,"").trim();
-    return x;
-  }
-
-  function isCommitteeHeading(line){
-    if (!line) return false;
-    if (hasNameToken(line)) return false;
-    const L = line.toLowerCase();
-    if (/\bjawatankuasa\b|\bmajlis\b|\bpanitia\b|\bunit\b|\bkelab\b|\bpersatuan\b|\bsukan\b|\bbiro\b/.test(L)) return true;
-    if (/^pengurusan\s+/i.test(line) && line.length <= 60) return true;
-    // tajuk ALL CAPS ringkas
-    const letters = (line.match(/[A-Za-z]/g) || []).length;
-    const upp = (line.match(/[A-Z]/g) || []).length;
-    if (letters >= 10 && upp/letters > 0.70 && line.length <= 80) return true;
-    return false;
-  }
-
-  function roleHeadingOnly(line){
-    if (!line) return null;
-    if (hasNameToken(line)) return null; // kalau ada nama, ini bukan header sahaja
-    const m = line.match(/^\s*((?:Pengerusi|Naib Pengerusi|Timbalan|Penyelaras|Setiausaha|Bendahari|Ketua Panitia|AJK|Ahli Jawatankuasa)\b(?:\s+[A-Za-zÀ-ÿ0-9\/&\-\(\)]+){0,6})\s*$/i);
-    if (!m) return null;
-    return cleanHeading(m[1]);
-  }
-
-  function enumTitleFromLine(line){
-    // 1. Majlis Dialog - Puan ...
-    const m = String(line||"").match(/^\s*\d+\s*[\.\)]\s*([^:–\-]{2,100}?)(?:\s*[-–:]\s*|\s{2,}|$)/);
-    if (!m || !m[1]) return null;
-    let t = m[1].trim();
-    // elak jika ini sebenarnya committee bernombor ("Jawatankuasa ...")
-    if (/^jawatankuasa\b/i.test(t)) return null;
-    // buang trailing kata seperti "Pengerusi" jika terlekat
-    t = t.replace(/\s+Pn\.?$|\s+Puan$|\s+En\.?$|\s+Encik$/i,"").trim();
-    if (t.length < 2) return null;
-    return t;
-  }
-
-  function buildLabel(major, jawatan, pengkhususan){
-    const top = major || "UMUM";
-    const j = (jawatan || "").replace(/\s+/g," ").trim();
-    const p = (pengkhususan || "").replace(/\s+/g," ").trim();
-    if (j && p) return `${top} - ${j} - ${p}`;
-    if (j) return `${top} - ${j}`;
-    return top;
-  }
-
   const n = pdfDoc.numPages;
 
   for (let p=1; p<=n; p++){
@@ -1069,30 +720,10 @@ async function buildTeacherIndexFromPdf(){
       const pageText = lines.join("\n");
       if (pageText.trim().length > 30) anyText = true;
 
-      let committeeCtx = null;     // contoh: "Jawatankuasa Data/APDM"
-      let roleCtx = null;          // contoh: "Penyelaras Program Khas"
-
       for (const line of lines){
         const l = String(line||"").replace(/\s+/g," ").trim();
         if (!l) continue;
 
-        // update committee context
-        if (isCommitteeHeading(l)){
-          committeeCtx = cleanHeading(l);
-          roleCtx = null; // reset role bila jumpa jawatankuasa baru
-          continue;
-        }
-
-        // update role header context (tanpa nama)
-        const rh = roleHeadingOnly(l);
-        if (rh){
-          roleCtx = rh;
-          continue;
-        }
-
-        const spec = enumTitleFromLine(l);
-
-        // cari nama dalam line
         NAME_REGEX.lastIndex = 0;
         const matches = l.match(NAME_REGEX) || [];
         if (!matches.length) continue;
@@ -1102,27 +733,8 @@ async function buildTeacherIndexFromPdf(){
           const t = addTeacher(teacherMap, name, p);
           if (!t) continue;
 
-          // role inline jika ada (contoh: "Setiausaha : Puan ...")
           const inlineRole = roleFromLine(l, name);
-
-          let jawatan = null;
-          let pengkhususan = null;
-
-          if (spec){
-            // untuk list bernombor: jawatan = role header (cth Penyelaras Program Khas), pengkhususan = item (cth Majlis Dialog)
-            jawatan = roleCtx || committeeCtx || inlineRole || null;
-            pengkhususan = spec;
-          }else{
-            if (committeeCtx && (inlineRole || roleCtx)){
-              jawatan = committeeCtx;
-              pengkhususan = inlineRole || roleCtx;
-            }else{
-              jawatan = committeeCtx || inlineRole || roleCtx || null;
-              pengkhususan = null;
-            }
-          }
-
-          const label = buildLabel(major, jawatan, pengkhususan);
+          const label = major + (inlineRole ? ` - ${inlineRole}` : "");
           addRole(t.roles, label, p);
         }
       }
@@ -1141,9 +753,7 @@ async function buildTeacherIndexFromPdf(){
     return;
   }
 
-  const mergedMap = mergeManualOverrides(teacherMap, TEACHERS_MANUAL);
-
-  const rawTeachers = Array.from(mergedMap.entries()).map(([name, obj]) => {
+  const rawTeachers = Array.from(teacherMap.entries()).map(([name, obj]) => {
     const pages = Array.from(obj.pages).sort((a,b)=>a-b);
     const roles = Array.from(obj.roles.entries()).map(([label, set]) => ({
       label,
@@ -1172,7 +782,7 @@ function populateTeacherDropdown(teachers){
   const list = Array.isArray(teachers) ? teachers : [];
   const sel = els.teacherSelect;
 
-  sel.innerHTML = `<option value="">Pilih nama guru…</option>`;
+  sel.innerHTML = `<option value="">-- Pilih nama guru --</option>`;
   for (const t of list){
     const opt = document.createElement("option");
     opt.value = t.name;
@@ -1191,7 +801,7 @@ function renderTeacherDetail(t){
   }
 
   const roles = (t.roles || []);
-  els.teacherHint.textContent = roles.length ? `Jumlah tugas: ${roles.length}` : "Tiada tugas dikesan (boleh tambah manual override).";
+  els.teacherHint.textContent = roles.length ? `Jumlah tugas: ${roles.length}` : "Tiada tugas dikesan.";
 
   els.teacherChips.innerHTML = roles.map(r => {
     const pages = (r.pages || []);
@@ -1199,21 +809,18 @@ function renderTeacherDetail(t){
     return `<span class="chip" data-pages="${pages.join(",")}" title="${escapeHtml(title)}">${escapeHtml(r.label)}</span>`;
   }).join("");
 
-  // Auto navigate + highlight on click role
   els.teacherChips.querySelectorAll(".chip").forEach(ch => {
     ch.addEventListener("click", () => {
       const pages = (ch.getAttribute("data-pages") || "").split(",").map(x=>Number(x)).filter(Boolean);
       if (!pages.length) return;
       const target = Math.min(...pages);
 
-      // highlight canonical name + all aliases of cluster (so typo on PDF still highlight)
       const aliases = (t.aliases && t.aliases.length) ? t.aliases : [{ key: normalizeForMatch(t.name), tokens: normalizeForMatch(t.name).split(" ").filter(x=>x.length>=2) }];
       setActiveHighlight(aliases, target);
 
       gotoPage(target);
       closeDrawer();
 
-      // ensure highlight drawn after render
       setTimeout(() => renderOnePage(target), 320);
     });
   });
@@ -1289,14 +896,11 @@ async function loadPdf(){
   setupVisiblePageTracker();
   updatePageBadge();
 
-  // render first pages quickly
   renderOnePage(1);
   renderOnePage(2);
 
-  // default Fit
   setTimeout(() => setFitMode(), 150);
 
-  // build teacher index
   els.teacherIndexStatus.textContent = "Index: mula…";
   setTimeout(() => buildTeacherIndexFromPdf(), 260);
 
