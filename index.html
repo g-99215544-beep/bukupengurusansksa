@@ -14,23 +14,23 @@
         * { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         html, body, #root { height: 100%; overflow: hidden; }
         .pdf-scroll-container { scroll-behavior: smooth; }
-        .pdf-scroll-container::-webkit-scrollbar { width: 4px; }
+        .pdf-scroll-container::-webkit-scrollbar { width: 6px; }
+        .pdf-scroll-container::-webkit-scrollbar-track { background: #e2e8f0; }
         .pdf-scroll-container::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 4px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
         .animate-pulse { animation: pulse 1.5s infinite; }
-        .page-wrapper { margin-bottom: 8px; }
-        .highlight-box { 
-            position: absolute; 
-            background: rgba(255, 220, 0, 0.5); 
-            border: 3px solid #f59e0b; 
-            border-radius: 4px;
-            pointer-events: none;
+        .page-wrapper { margin-bottom: 12px; }
+        
+        /* HIGH DPI CANVAS FIX - untuk PDF tidak blur di mobile */
+        canvas {
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
         }
     </style>
 </head>
-<body class="bg-gray-900">
+<body class="bg-slate-200">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -242,13 +242,22 @@
                     const container = scrollContainerRef.current;
                     if (!canvas || !container) return;
 
+                    // Get device pixel ratio for sharp rendering on mobile
+                    const pixelRatio = window.devicePixelRatio || 1;
+                    
                     const containerWidth = container.clientWidth - 24;
                     const originalViewport = page.getViewport({ scale: 1 });
                     const scale = containerWidth / originalViewport.width;
-                    const viewport = page.getViewport({ scale });
+                    const viewport = page.getViewport({ scale: scale * pixelRatio });
                     
+                    // Set actual canvas size (high resolution)
                     canvas.width = viewport.width;
                     canvas.height = viewport.height;
+                    
+                    // Set display size (CSS)
+                    canvas.style.width = (viewport.width / pixelRatio) + 'px';
+                    canvas.style.height = (viewport.height / pixelRatio) + 'px';
+                    
                     const ctx = canvas.getContext('2d');
                     
                     // Clear and render
@@ -265,32 +274,27 @@
                             
                             // Match nama utama sahaja
                             if (mainName && itemText.includes(mainName) && itemText.length < 50) {
-                                const tx = viewport.transform;
                                 const [a, b, c, d, e, f] = item.transform;
                                 
-                                // Calculate position
-                                const x = (a * tx[0] + c * tx[2]) * e + tx[4];
-                                const y = canvas.height - ((b * tx[1] + d * tx[3]) * f + tx[5]) - (item.height * scale);
-                                
-                                // Simpler calculation
-                                const itemX = e * scale;
-                                const itemY = canvas.height - (f * scale) - (item.height * scale * 0.8);
-                                const itemWidth = item.width * scale;
-                                const itemHeight = item.height * scale * 1.5;
+                                // Calculate position with pixel ratio
+                                const itemX = e * scale * pixelRatio;
+                                const itemY = canvas.height - (f * scale * pixelRatio) - (item.height * scale * pixelRatio * 0.8);
+                                const itemWidth = item.width * scale * pixelRatio;
+                                const itemHeight = item.height * scale * pixelRatio * 1.5;
                                 
                                 // Draw highlight
                                 ctx.fillStyle = 'rgba(255, 220, 0, 0.6)';
-                                ctx.fillRect(itemX - 3, itemY - 3, itemWidth + 6, itemHeight + 6);
+                                ctx.fillRect(itemX - 4, itemY - 4, itemWidth + 8, itemHeight + 8);
                                 
                                 // Draw border
                                 ctx.strokeStyle = '#f59e0b';
-                                ctx.lineWidth = 3;
-                                ctx.strokeRect(itemX - 3, itemY - 3, itemWidth + 6, itemHeight + 6);
+                                ctx.lineWidth = 3 * pixelRatio;
+                                ctx.strokeRect(itemX - 4, itemY - 4, itemWidth + 8, itemHeight + 8);
                             }
                         });
                     }
                     
-                    setPageHeights(prev => ({ ...prev, [pageNum]: viewport.height }));
+                    setPageHeights(prev => ({ ...prev, [pageNum]: viewport.height / pixelRatio }));
                 } catch (e) {
                     console.error('Render error page', pageNum, e);
                 }
@@ -359,7 +363,7 @@
             const currentSection = tableOfContents.find(s => currentPage >= s.page_start && currentPage <= s.page_end);
 
             return (
-                <div className="h-full flex flex-col bg-gray-900">
+                <div className="h-full flex flex-col bg-slate-200">
                     {/* Toast */}
                     {showToast && (
                         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-lg animate-fadeIn">
@@ -396,10 +400,10 @@
                     {activeTab === 'buku' && (
                         <div className="flex-1 flex flex-col min-h-0">
                             {/* Controls */}
-                            <div className="bg-gray-800 px-2 py-1.5 flex items-center justify-between gap-2 flex-shrink-0">
+                            <div className="bg-white border-b border-slate-200 px-2 py-1.5 flex items-center justify-between gap-2 flex-shrink-0 shadow-sm">
                                 <button 
                                     onClick={() => setShowNav(!showNav)}
-                                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-white text-xs"
+                                    className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-slate-700 text-xs font-medium"
                                 >
                                     📑 <span className="hidden sm:inline">{currentSection?.label || 'Nav'}</span>
                                 </button>
@@ -411,7 +415,7 @@
                                     </div>
                                 )}
                                 
-                                <div className="bg-gray-700 px-3 py-1 rounded text-white text-sm font-medium">
+                                <div className="bg-indigo-600 text-white px-3 py-1 rounded text-sm font-medium">
                                     {currentPage} / {totalPages}
                                 </div>
                             </div>
@@ -446,19 +450,19 @@
                             {/* PDF Scroll Container - CONTINUOUS SCROLL */}
                             <div 
                                 ref={scrollContainerRef}
-                                className="flex-1 overflow-y-auto bg-gray-800 p-3 pdf-scroll-container"
+                                className="flex-1 overflow-y-auto bg-slate-300 p-3 pdf-scroll-container"
                                 onScroll={handleScroll}
                                 onClick={() => showNav && setShowNav(false)}
                             >
                                 {isLoading ? (
                                     <div className="h-full flex flex-col items-center justify-center">
-                                        <div className="w-10 h-10 border-4 border-white border-t-transparent rounded-full animate-spin mb-3"></div>
-                                        <p className="text-white/70 text-sm">Memuatkan PDF...</p>
+                                        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                                        <p className="text-slate-600 text-sm">Memuatkan PDF...</p>
                                     </div>
                                 ) : loadError ? (
                                     <div className="h-full flex flex-col items-center justify-center text-center p-4">
                                         <div className="text-4xl mb-3">⚠️</div>
-                                        <p className="text-white/70 text-sm mb-3">{loadError}</p>
+                                        <p className="text-slate-600 text-sm mb-3">{loadError}</p>
                                         <button onClick={loadPDF} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Cuba Lagi</button>
                                     </div>
                                 ) : (
@@ -479,7 +483,7 @@
                                                     }}
                                                     className="rounded shadow-xl bg-white"
                                                 />
-                                                <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                                                <div className="absolute bottom-2 right-2 bg-indigo-600/90 text-white text-xs px-2 py-1 rounded font-medium">
                                                     {pageNum}
                                                 </div>
                                             </div>
