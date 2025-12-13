@@ -1,0 +1,169 @@
+{
+  "sekolah": "SK Sultan Abu Bakar (1)",
+  "tahun": 2021,
+  "tajuk_utama": [
+    {
+      "id": "prakata",
+      "label": "Prakata & Pengenalan",
+      "page_start": 1,
+      "page_end": 16,
+      "subsections": [
+        {"label": "Isi Kandungan", "page": 1},
+        {"label": "Prakata Guru Besar", "page": 2},
+        {"label": "Surat Aku Janji", "page": 4},
+        {"label": "Warga Pendidik & Staf Sokongan", "page": 5},
+        {"label": "Falsafah Pendidikan Kebangsaan", "page": 7},
+        {"label": "Sejarah Sekolah", "page": 8},
+        {"label": "Profil Sekolah", "page": 10},
+        {"label": "Cogan Kata & Senarai Guru Kelas", "page": 11},
+        {"label": "Lencana & Bendera Sekolah", "page": 12},
+        {"label": "Matlamat, Objektif & Piagam", "page": 13},
+        {"label": "Lagu Sekolah", "page": 16}
+      ]
+    },
+    {
+      "id": "senarai_guru",
+      "label": "Senarai Nama Guru & Staf",
+      "page_start": 17,
+      "page_end": 18,
+      "subsections": [
+        {"label": "Senarai Nama Guru", "page": 17},
+        {"label": "Senarai Staf Sokongan", "page": 18}
+      ]
+    },
+    {
+      "id": "pentadbiran",
+      "label": "Pengurusan Sekolah",
+      "page_start": 19,
+      "page_end": 66,
+      "subsections": [
+        {"label": "Pelan Sekolah", "page": 19},
+        {"label": "Carta Organisasi Sekolah", "page": 20},
+        {"label": "5 Aspirasi Sistem Pendidikan", "page": 21},
+        {"label": "6 Aspirasi Murid & 11 Anjakan PPPM", "page": 22},
+        {"label": "Prinsip Kerja JPNJ & PPD Muar", "page": 23},
+        {"label": "Kalender Persekolahan", "page": 25},
+        {"label": "MMI, MBMMBI & Sarana Sekolah", "page": 26},
+        {"label": "Garis Panduan Utama Sekolah", "page": 28},
+        {"label": "Takwim Sekolah", "page": 37},
+        {"label": "Jadual Guru Bertugas Mingguan", "page": 49},
+        {"label": "Carta Organisasi Sekolah Penuh", "page": 54},
+        {"label": "Majlis Pengurusan Am Sekolah", "page": 55},
+        {"label": "JK Kewangan Sekolah", "page": 55},
+        {"label": "JK Audit Dalaman", "page": 55},
+        {"label": "JK Inventori & Aset", "page": 57},
+        {"label": "JK Perancangan Strategik", "page": 58},
+        {"label": "JK SKK/TS25", "page": 59},
+        {"label": "JK SKPMg2", "page": 60},
+        {"label": "JK JPMS", "page": 60},
+        {"label": "JK Lembaga Tatatertib", "page": 60},
+        {"label": "JK LDP/PLC", "page": 60},
+        {"label": "JK PBPPP", "page": 60},
+        {"label": "JK Kedai Buku", "page": 61},
+        {"label": "JK Jadual Waktu", "page": 61},
+        {"label": "JK Sebutharga", "page": 61},
+        {"label": "JK Praktikum", "page": 61},
+        {"label": "JK EKSA", "page": 61},
+        {"label": "JK SPSK", "page": 62},
+        {"label": "JK Permuafakatan Pintar", "page": 62},
+        {"label": "JK Pengurusan Fizikal/Infra", "page": 62},
+        {"label": "JK Bilik-Bilik Khas", "page": 63},
+        {"label": "JK Guru Baru & Muda", "page": 63},
+        {"label": "JK Inovatif & R&D", "page": 64},
+        {"label": "JK Publisiti", "page": 64},
+        {"label": "JK Upacara Rasmi", "page": 64},
+        {"label": "JK Bencana", "page": 65},
+        {"label": "JK Sarana Sekolah", "page": 66}
+      ]
+    },
+    {
+      "id": "kurikulum",
+      "label": "Pengurusan Kurikulum",
+      "page_start": 67,
+      "page_end": 79,
+      "subsections": [
+        {"label": "Carta Organisasi Kurikulum", "page": 67},
+        {"label": "Majlis Pengurusan Kurikulum", "page": 68},
+        {"label": "JK Induk Kurikulum", "page": 69},
+        {"label": "JK PBS", "page": 69},
+        {"label": "JK PBD", "page": 70},
+        {"label": "JK Penyeliaan PdPc", "page": 70},
+        {"label": "JK Program Celik 3M/PLaN", "page": 70},
+        {"label": "JK PROTIM", "page": 70},
+        {"label": "JK Pemulihan", "page": 71},
+        {"label": "JK Kecemerlangan UPSR", "page": 71},
+        {"label": "JK Panitia Mata Pelajaran", "page": 71},
+        {"label": "JK LET/HIPS", "page": 73},
+        {"label": "JK PSS", "page": 73},
+        {"label": "JK Prasekolah", "page": 74},
+        {"label": "JK PPKIP", "page": 74},
+        {"label": "JK STEM", "page": 74},
+        {"label": "Jadual Penyeliaan PdPc", "page": 75},
+        {"label": "Jadual Penyeliaan HKM", "page": 76},
+        {"label": "Takwim PBS", "page": 77},
+        {"label": "Pencapaian UPSR", "page": 78},
+        {"label": "Giliran Bertugas GPK", "page": 79}
+      ]
+    },
+    {
+      "id": "hem",
+      "label": "Pengurusan Hal Ehwal Murid",
+      "page_start": 80,
+      "page_end": 87,
+      "subsections": [
+        {"label": "Carta Organisasi HEM", "page": 80},
+        {"label": "Dasar Hal Ehwal Murid", "page": 81},
+        {"label": "Majlis Pengurusan HEM", "page": 84},
+        {"label": "JK APDM", "page": 84},
+        {"label": "JK Pendaftaran Murid", "page": 84},
+        {"label": "JK Skim Bantuan & Kebajikan", "page": 85},
+        {"label": "JK RMT", "page": 85},
+        {"label": "JK PSS", "page": 85},
+        {"label": "JK Kantin", "page": 85},
+        {"label": "JK SPBT", "page": 85},
+        {"label": "JK Lembaga Pengawas", "page": 86},
+        {"label": "JK Lembaga Disiplin", "page": 86},
+        {"label": "JK e-Kehadiran", "page": 86},
+        {"label": "JK 3K (Kesihatan/Kebersihan/Keselamatan)", "page": 86},
+        {"label": "JK PPDa", "page": 87},
+        {"label": "JK Bimbingan & Kaunseling", "page": 87},
+        {"label": "JK Program Transisi", "page": 87},
+        {"label": "JK Ziarah Cakna", "page": 87},
+        {"label": "JK Sarana Sekolah", "page": 87}
+      ]
+    },
+    {
+      "id": "kokurikulum",
+      "label": "Pengurusan Kokurikulum",
+      "page_start": 88,
+      "page_end": 98,
+      "subsections": [
+        {"label": "Carta Organisasi Kokurikulum", "page": 88},
+        {"label": "Pengenalan Kokurikulum", "page": 89},
+        {"label": "Majlis Sukan Sekolah", "page": 90},
+        {"label": "JK Induk Kokurikulum", "page": 94},
+        {"label": "JK Unit Beruniform", "page": 94},
+        {"label": "JK Kelab & Persatuan", "page": 95},
+        {"label": "JK Sukan & Permainan", "page": 95},
+        {"label": "JK Pasukan Sekolah", "page": 96},
+        {"label": "JK Rumah Sukan", "page": 97},
+        {"label": "JK RIMUP", "page": 97},
+        {"label": "JK MAKDIS", "page": 97},
+        {"label": "Program & Aktiviti Sekolah", "page": 98}
+      ]
+    },
+    {
+      "id": "ppkip",
+      "label": "Pengurusan PPKIP",
+      "page_start": 99,
+      "page_end": 106,
+      "subsections": [
+        {"label": "Carta Organisasi PPKIP", "page": 99},
+        {"label": "JK Pengurusan PPKIP", "page": 100},
+        {"label": "JK Kurikulum PPKIP", "page": 102},
+        {"label": "JK HEM PPKIP", "page": 104},
+        {"label": "JK Kokurikulum PPKIP", "page": 106}
+      ]
+    }
+  ]
+}
