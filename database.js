@@ -625,8 +625,7 @@ function extractLinesFromTextContent(textContent){
   const lines = [];
   for (const y of ys){
     const row = groups.get(y).sort((a,b)=> a.x - b.x);
-    const line = row.map(r => r.str).join(" ").replace(/\s+/g,"
-                                                       " ").trim();
+    const line = row.map(r => r.str).join(" ").replace(/\s+/g,"" ").trim();
     if (line) lines.push(line);
   }
   return lines;
