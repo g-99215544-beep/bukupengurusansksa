@@ -13,21 +13,28 @@
     <style>
         * { font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
         html, body, #root { height: 100%; overflow: hidden; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .pdf-scroll-container { scroll-behavior: smooth; }
+        .pdf-scroll-container::-webkit-scrollbar { width: 4px; }
+        .pdf-scroll-container::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 4px; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-        .animate-slideUp { animation: slideUp 0.3s ease-out; }
         .animate-pulse { animation: pulse 1.5s infinite; }
+        .page-wrapper { margin-bottom: 8px; }
+        .highlight-box { 
+            position: absolute; 
+            background: rgba(255, 220, 0, 0.5); 
+            border: 3px solid #f59e0b; 
+            border-radius: 4px;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="bg-gray-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
+        const { useState, useRef, useEffect, useCallback } = React;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         const PDF_FILE_NAME = 'BUKU_PENGURUSAN_2021.pdf';
@@ -134,6 +141,19 @@
                 { label: "Guru Pendidikan Khas", page_number: 17, category: "ppkip" },
                 { label: "Setiausaha Pengurusan Am", page_number: 55, category: "pentadbiran" },
                 { label: "Bendahari JK PPKIP", page_number: 100, category: "ppkip" }
+            ]},
+            { nama: "PN. MEHRUNIZA BINTI AYOB", jawatan: "Guru PSS/Media", avatar: "👩‍🏫", tugas: [
+                { label: "Guru PSS/Media", page_number: 17, category: "pentadbiran" },
+                { label: "Ketua Panitia Pendidikan Moral", page_number: 73, category: "kurikulum" },
+                { label: "Pengerusi Rumah Teratai", page_number: 97, category: "kokurikulum" }
+            ]},
+            { nama: "PN. SAMZUNORZETA BINTI SHAMSUDDIN", jawatan: "Guru Prasekolah", avatar: "👩‍🏫", tugas: [
+                { label: "Guru Prasekolah", page_number: 17, category: "kurikulum" },
+                { label: "Setiausaha Pendidikan Islam/QAF", page_number: 73, category: "kurikulum" }
+            ]},
+            { nama: "PN. NAJIHA BINTI ABD KADIR", jawatan: "SUP Awam", avatar: "👩‍🏫", tugas: [
+                { label: "AJK Pendidikan Islam/QAF", page_number: 73, category: "kurikulum" },
+                { label: "Penyelaras Kelab & Persatuan", page_number: 94, category: "kokurikulum" }
             ]}
         ];
 
@@ -143,6 +163,16 @@
             hem: { color: "#f59e0b", label: "HEM" },
             kokurikulum: { color: "#ef4444", label: "Kokurikulum" },
             ppkip: { color: "#ec4899", label: "PPKIP" }
+        };
+
+        // Extract nama utama dari nama penuh guru
+        const extractMainName = (fullName) => {
+            const parts = fullName.toUpperCase().split(' ');
+            const filtered = parts.filter(part => 
+                !['PN.', 'EN.', 'CIK', 'HJH.', 'HJ.', 'BINTI', 'BIN', 'B.', 'BT.', 'BT', '@', 'A.', 'ABD', 'MOHD', 'MOHAMED', 'MOHAMAD', 'MUHAMMAD'].includes(part) &&
+                part.length > 2
+            );
+            return filtered[0] || parts[1] || '';
         };
 
         function App() {
@@ -156,14 +186,29 @@
             const [selectedGuru, setSelectedGuru] = useState(null);
             const [showToast, setShowToast] = useState(false);
             const [toastMsg, setToastMsg] = useState('');
-            
-            const canvasRef = useRef(null);
-            const containerRef = useRef(null);
             const [highlightName, setHighlightName] = useState('');
-            const [highlightRects, setHighlightRects] = useState([]);
+            const [renderedPages, setRenderedPages] = useState([]);
+            const [pageHeights, setPageHeights] = useState({});
+            
+            const scrollContainerRef = useRef(null);
+            const pageRefs = useRef({});
+            const canvasRefs = useRef({});
 
             useEffect(() => { loadPDF(); }, []);
-            useEffect(() => { if (pdfDoc) renderPage(currentPage); }, [currentPage, pdfDoc, highlightName]);
+
+            // Render semua pages bila PDF loaded
+            useEffect(() => {
+                if (pdfDoc) {
+                    renderAllPages();
+                }
+            }, [pdfDoc]);
+
+            // Re-render bila highlight berubah
+            useEffect(() => {
+                if (pdfDoc && highlightName) {
+                    renderAllPages();
+                }
+            }, [highlightName]);
 
             const loadPDF = async () => {
                 setIsLoading(true);
@@ -171,144 +216,159 @@
                     const pdf = await pdfjsLib.getDocument(PDF_FILE_NAME).promise;
                     setPdfDoc(pdf);
                     setTotalPages(pdf.numPages);
+                    setRenderedPages(Array.from({ length: pdf.numPages }, (_, i) => i + 1));
                     setIsLoading(false);
                 } catch (e) {
-                    setLoadError('Gagal memuatkan PDF');
+                    console.error('PDF Load Error:', e);
+                    setLoadError('Gagal memuatkan PDF. Pastikan fail PDF ada dalam folder yang sama.');
                     setIsLoading(false);
                 }
             };
 
-            const renderPage = async (num) => {
-                if (!pdfDoc || !canvasRef.current || !containerRef.current) return;
-                const page = await pdfDoc.getPage(num);
-                const container = containerRef.current;
-                const containerWidth = container.clientWidth - 16;
-                const originalViewport = page.getViewport({ scale: 1 });
-                const scale = containerWidth / originalViewport.width;
-                const viewport = page.getViewport({ scale });
-                const canvas = canvasRef.current;
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                const ctx = canvas.getContext('2d');
+            const renderAllPages = async () => {
+                if (!pdfDoc) return;
                 
-                // Render PDF page
-                await page.render({ canvasContext: ctx, viewport }).promise;
+                for (let i = 1; i <= pdfDoc.numPages; i++) {
+                    await renderSinglePage(i);
+                }
+            };
+
+            const renderSinglePage = async (pageNum) => {
+                if (!pdfDoc || !canvasRefs.current[pageNum]) return;
                 
-                // Highlight nama guru jika ada - HANYA nama yang TEPAT
-                if (highlightName) {
-                    const textContent = await page.getTextContent();
+                try {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const canvas = canvasRefs.current[pageNum];
+                    const container = scrollContainerRef.current;
+                    if (!canvas || !container) return;
+
+                    const containerWidth = container.clientWidth - 24;
+                    const originalViewport = page.getViewport({ scale: 1 });
+                    const scale = containerWidth / originalViewport.width;
+                    const viewport = page.getViewport({ scale });
                     
-                    // Ambil nama penuh untuk matching tepat
-                    // Contoh: "PN. HJH. AIDAH BINTI SULAIMAN" -> cari "AIDAH", "SULAIMAN", atau nama penuh
-                    const nameParts = highlightName.toUpperCase().split(' ');
-                    // Ambil nama utama (biasanya selepas gelaran seperti PN., EN., CIK, HJH.)
-                    const mainNames = nameParts.filter(part => 
-                        !['PN.', 'EN.', 'CIK', 'HJH.', 'HJ.', 'BINTI', 'BIN', 'B.', 'BT.', 'BT', '@'].includes(part) &&
-                        part.length > 2
-                    );
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const ctx = canvas.getContext('2d');
                     
-                    textContent.items.forEach((item) => {
-                        const itemText = item.str.toUpperCase().trim();
+                    // Clear and render
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    await page.render({ canvasContext: ctx, viewport }).promise;
+                    
+                    // Highlight nama guru
+                    if (highlightName) {
+                        const textContent = await page.getTextContent();
+                        const mainName = extractMainName(highlightName);
                         
-                        // HANYA highlight jika text SAMA TEPAT dengan salah satu nama utama
-                        const isExactMatch = mainNames.some(name => {
-                            // Exact match atau itemText mengandungi nama penuh
-                            return itemText === name || 
-                                   itemText.includes(name) && itemText.length < name.length + 10;
+                        textContent.items.forEach((item) => {
+                            const itemText = item.str.toUpperCase().trim();
+                            
+                            // Match nama utama sahaja
+                            if (mainName && itemText.includes(mainName) && itemText.length < 50) {
+                                const tx = viewport.transform;
+                                const [a, b, c, d, e, f] = item.transform;
+                                
+                                // Calculate position
+                                const x = (a * tx[0] + c * tx[2]) * e + tx[4];
+                                const y = canvas.height - ((b * tx[1] + d * tx[3]) * f + tx[5]) - (item.height * scale);
+                                
+                                // Simpler calculation
+                                const itemX = e * scale;
+                                const itemY = canvas.height - (f * scale) - (item.height * scale * 0.8);
+                                const itemWidth = item.width * scale;
+                                const itemHeight = item.height * scale * 1.5;
+                                
+                                // Draw highlight
+                                ctx.fillStyle = 'rgba(255, 220, 0, 0.6)';
+                                ctx.fillRect(itemX - 3, itemY - 3, itemWidth + 6, itemHeight + 6);
+                                
+                                // Draw border
+                                ctx.strokeStyle = '#f59e0b';
+                                ctx.lineWidth = 3;
+                                ctx.strokeRect(itemX - 3, itemY - 3, itemWidth + 6, itemHeight + 6);
+                            }
                         });
-                        
-                        if (isExactMatch && itemText.length > 2) {
-                            const [a, b, c, d, e, f] = item.transform;
-                            const x = e * scale;
-                            const y = canvas.height - (f * scale) - (item.height * scale);
-                            const width = item.width * scale;
-                            const height = item.height * scale * 1.3;
-                            
-                            // Highlight kuning terang
-                            ctx.fillStyle = 'rgba(255, 200, 0, 0.6)';
-                            ctx.fillRect(x - 2, y - 2, width + 4, height + 4);
-                            
-                            // Border oren tebal
-                            ctx.strokeStyle = '#f59e0b';
-                            ctx.lineWidth = 3;
-                            ctx.strokeRect(x - 2, y - 2, width + 4, height + 4);
-                        }
-                    });
-                }
-            };
-
-            // Swipe/Touch handlers untuk tukar page
-            const touchStartY = useRef(0);
-            const touchEndY = useRef(0);
-            
-            const handleTouchStart = (e) => {
-                touchStartY.current = e.touches[0].clientY;
-            };
-            
-            const handleTouchEnd = (e) => {
-                touchEndY.current = e.changedTouches[0].clientY;
-                const diff = touchStartY.current - touchEndY.current;
-                
-                // Swipe up = next page, Swipe down = previous page
-                if (Math.abs(diff) > 50) { // minimum 50px swipe
-                    if (diff > 0 && currentPage < totalPages) {
-                        // Swipe UP - next page
-                        setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                    } else if (diff < 0 && currentPage > 1) {
-                        // Swipe DOWN - previous page
-                        setCurrentPage(prev => Math.max(prev - 1, 1));
                     }
-                }
-            };
-            
-            // Mouse wheel handler untuk desktop
-            const handleWheel = (e) => {
-                e.preventDefault();
-                if (e.deltaY > 30 && currentPage < totalPages) {
-                    // Scroll down - next page
-                    setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                } else if (e.deltaY < -30 && currentPage > 1) {
-                    // Scroll up - previous page
-                    setCurrentPage(prev => Math.max(prev - 1, 1));
+                    
+                    setPageHeights(prev => ({ ...prev, [pageNum]: viewport.height }));
+                } catch (e) {
+                    console.error('Render error page', pageNum, e);
                 }
             };
 
-            const goToPage = (p) => { if (p >= 1 && p <= totalPages) setCurrentPage(p); };
+            // Detect current page from scroll position
+            const handleScroll = useCallback(() => {
+                if (!scrollContainerRef.current) return;
+                
+                const container = scrollContainerRef.current;
+                const scrollTop = container.scrollTop;
+                const containerHeight = container.clientHeight;
+                
+                // Find which page is most visible
+                let cumulativeHeight = 0;
+                for (let i = 1; i <= totalPages; i++) {
+                    const pageHeight = pageHeights[i] || 600;
+                    const pageTop = cumulativeHeight;
+                    const pageBottom = cumulativeHeight + pageHeight + 12; // 12 = margin
+                    
+                    // If middle of viewport is within this page
+                    if (scrollTop + containerHeight / 2 >= pageTop && scrollTop + containerHeight / 2 < pageBottom) {
+                        if (currentPage !== i) {
+                            setCurrentPage(i);
+                        }
+                        break;
+                    }
+                    cumulativeHeight = pageBottom;
+                }
+            }, [totalPages, pageHeights, currentPage]);
+
+            // Scroll to specific page
+            const scrollToPage = (pageNum) => {
+                if (!scrollContainerRef.current || !pageRefs.current[pageNum]) return;
+                
+                pageRefs.current[pageNum].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setCurrentPage(pageNum);
+            };
             
             const toast = (msg) => {
                 setToastMsg(msg);
                 setShowToast(true);
-                setTimeout(() => setShowToast(false), 2000);
+                setTimeout(() => setShowToast(false), 2500);
             };
 
             const navigateToTask = (guru, task) => {
                 setHighlightName(guru.nama);
-                setCurrentPage(task.page_number);
                 setActiveTab('buku');
                 setSelectedGuru(null);
-                toast(`m/s ${task.page_number} - Mencari: ${guru.nama.split(' ')[1] || guru.nama}`);
+                
+                // Wait for tab switch then scroll
+                setTimeout(() => {
+                    scrollToPage(task.page_number);
+                }, 100);
+                
+                const mainName = extractMainName(guru.nama);
+                toast(`Mencari "${mainName}" di m/s ${task.page_number}`);
             };
 
             const navigateToSection = (section) => {
-                setCurrentPage(section.page_start);
+                scrollToPage(section.page_start);
                 setShowNav(false);
-                toast(`${section.label}`);
+                toast(section.label);
             };
 
-            // Get current section
             const currentSection = tableOfContents.find(s => currentPage >= s.page_start && currentPage <= s.page_end);
 
             return (
                 <div className="h-full flex flex-col bg-gray-900">
                     {/* Toast */}
                     {showToast && (
-                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-black/80 text-white px-4 py-2 rounded-full text-sm animate-fadeIn">
+                        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-green-600 text-white px-4 py-2 rounded-full text-sm shadow-lg animate-fadeIn">
                             ✓ {toastMsg}
                         </div>
                     )}
 
                     {/* Compact Header */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-2 flex items-center justify-between">
+                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-3 py-2 flex items-center justify-between flex-shrink-0">
                         <div className="flex items-center gap-2">
                             <span className="text-lg">📚</span>
                             <div>
@@ -332,38 +392,28 @@
                         </div>
                     </div>
 
-                    {/* BUKU TAB - PDF Viewer Full Screen */}
+                    {/* BUKU TAB */}
                     {activeTab === 'buku' && (
                         <div className="flex-1 flex flex-col min-h-0">
-                            {/* Mini Controls - Tanpa butang, swipe untuk navigate */}
-                            <div className="bg-gray-800 px-2 py-1.5 flex items-center justify-between gap-2">
+                            {/* Controls */}
+                            <div className="bg-gray-800 px-2 py-1.5 flex items-center justify-between gap-2 flex-shrink-0">
                                 <button 
                                     onClick={() => setShowNav(!showNav)}
-                                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-white text-xs flex-shrink-0"
+                                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 rounded text-white text-xs"
                                 >
-                                    📑 <span className="hidden sm:inline">{currentSection?.label || 'Navigasi'}</span>
+                                    📑 <span className="hidden sm:inline">{currentSection?.label || 'Nav'}</span>
                                 </button>
                                 
-                                {/* Highlight Indicator */}
                                 {highlightName && (
-                                    <div className="flex items-center gap-1 bg-yellow-500 text-yellow-900 px-2 py-1 rounded text-xs font-medium animate-pulse truncate max-w-[120px]">
-                                        <span>🔍</span>
-                                        <span className="truncate">{highlightName.split(' ').find(p => !['PN.','EN.','CIK','HJH.','BINTI','BIN'].includes(p) && p.length > 2) || highlightName.split(' ')[1]}</span>
-                                        <button onClick={() => setHighlightName('')} className="ml-1 font-bold hover:text-yellow-700">✕</button>
+                                    <div className="flex items-center gap-1 bg-yellow-400 text-yellow-900 px-2 py-1 rounded text-xs font-bold animate-pulse">
+                                        🔍 {extractMainName(highlightName)}
+                                        <button onClick={() => { setHighlightName(''); renderAllPages(); }} className="ml-1 hover:text-red-700 font-bold">✕</button>
                                     </div>
                                 )}
                                 
-                                {/* Page indicator dengan hint swipe */}
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    <div className="bg-gray-700 px-3 py-1.5 rounded text-white text-sm font-medium">
-                                        {currentPage} / {totalPages}
-                                    </div>
+                                <div className="bg-gray-700 px-3 py-1 rounded text-white text-sm font-medium">
+                                    {currentPage} / {totalPages}
                                 </div>
-                            </div>
-                            
-                            {/* Swipe hint */}
-                            <div className="bg-gray-700 text-gray-400 text-xs text-center py-1">
-                                ↑ Swipe untuk tukar muka surat ↓
                             </div>
 
                             {/* Navigation Dropdown */}
@@ -393,14 +443,12 @@
                                 </div>
                             )}
 
-                            {/* PDF Canvas - FULL HEIGHT dengan Swipe Navigation */}
+                            {/* PDF Scroll Container - CONTINUOUS SCROLL */}
                             <div 
-                                ref={containerRef} 
-                                className="flex-1 overflow-hidden bg-gray-800 p-2 flex items-center justify-center" 
+                                ref={scrollContainerRef}
+                                className="flex-1 overflow-y-auto bg-gray-800 p-3 pdf-scroll-container"
+                                onScroll={handleScroll}
                                 onClick={() => showNav && setShowNav(false)}
-                                onTouchStart={handleTouchStart}
-                                onTouchEnd={handleTouchEnd}
-                                onWheel={handleWheel}
                             >
                                 {isLoading ? (
                                     <div className="h-full flex flex-col items-center justify-center">
@@ -414,16 +462,37 @@
                                         <button onClick={loadPDF} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm">Cuba Lagi</button>
                                     </div>
                                 ) : (
-                                    <canvas ref={canvasRef} className="mx-auto rounded shadow-2xl"></canvas>
+                                    <div className="flex flex-col items-center">
+                                        {renderedPages.map((pageNum) => (
+                                            <div 
+                                                key={pageNum}
+                                                ref={el => pageRefs.current[pageNum] = el}
+                                                className="page-wrapper relative"
+                                            >
+                                                <canvas 
+                                                    ref={el => {
+                                                        canvasRefs.current[pageNum] = el;
+                                                        if (el && pdfDoc && !el.dataset.rendered) {
+                                                            el.dataset.rendered = 'true';
+                                                            renderSinglePage(pageNum);
+                                                        }
+                                                    }}
+                                                    className="rounded shadow-xl bg-white"
+                                                />
+                                                <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                                                    {pageNum}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
                         </div>
                     )}
 
-                    {/* GURU TAB - Dropdown + Task Card */}
+                    {/* GURU TAB */}
                     {activeTab === 'guru' && (
                         <div className="flex-1 overflow-auto bg-gray-100 p-4">
-                            {/* Dropdown Pilih Guru */}
                             <div className="bg-white rounded-xl shadow-lg p-4 mb-4">
                                 <label className="block text-sm font-semibold text-gray-700 mb-2">👤 Pilih Guru</label>
                                 <select
@@ -432,7 +501,7 @@
                                         const guru = guruDatabase.find(g => g.nama === e.target.value);
                                         setSelectedGuru(guru || null);
                                     }}
-                                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-800 font-medium appearance-none cursor-pointer focus:border-indigo-500 focus:outline-none transition-all"
+                                    className="w-full p-3 bg-gray-50 border-2 border-gray-200 rounded-xl text-gray-800 font-medium appearance-none cursor-pointer focus:border-indigo-500 focus:outline-none"
                                     style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
                                 >
                                     <option value="">-- Pilih nama guru --</option>
@@ -443,10 +512,8 @@
                                 <p className="mt-2 text-xs text-gray-500">Jumlah: {guruDatabase.length} guru</p>
                             </div>
 
-                            {/* Kad Tugas - Hanya keluar bila pilih guru */}
                             {selectedGuru ? (
                                 <div className="bg-white rounded-xl shadow-lg overflow-hidden animate-fadeIn">
-                                    {/* Header */}
                                     <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 text-white">
                                         <div className="flex items-center gap-3">
                                             <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl">{selectedGuru.avatar}</div>
@@ -458,9 +525,8 @@
                                         </div>
                                     </div>
 
-                                    {/* Senarai Tugas */}
                                     <div className="p-4">
-                                        <div className="text-xs font-bold text-gray-500 uppercase mb-3">📋 Tugas & Jawatankuasa ({selectedGuru.tugas.length})</div>
+                                        <div className="text-xs font-bold text-gray-500 uppercase mb-3">📋 Tugas ({selectedGuru.tugas.length})</div>
                                         <div className="space-y-2">
                                             {selectedGuru.tugas.map((task, j) => (
                                                 <button 
@@ -468,14 +534,14 @@
                                                     onClick={() => navigateToTask(selectedGuru, task)} 
                                                     className="w-full text-left p-3 rounded-xl bg-gray-50 hover:bg-indigo-50 transition-all flex items-center gap-3 group"
                                                 >
-                                                    <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: categoryConfig[task.category]?.color }}></div>
+                                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: categoryConfig[task.category]?.color }}></div>
                                                     <div className="flex-1 min-w-0">
                                                         <div className="font-medium text-gray-800 group-hover:text-indigo-600 text-sm">{task.label}</div>
-                                                        <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-2">
-                                                            <span className="px-1.5 py-0.5 rounded text-white text-xs" style={{ backgroundColor: categoryConfig[task.category]?.color }}>
+                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                            <span className="px-1.5 py-0.5 rounded text-white" style={{ backgroundColor: categoryConfig[task.category]?.color }}>
                                                                 {categoryConfig[task.category]?.label}
                                                             </span>
-                                                            <span>m/s {task.page_number}</span>
+                                                            <span className="ml-2">m/s {task.page_number}</span>
                                                         </div>
                                                     </div>
                                                     <span className="text-gray-400 group-hover:text-indigo-500 text-lg">→</span>
@@ -488,7 +554,7 @@
                                 <div className="bg-white rounded-xl shadow-lg p-8 text-center">
                                     <div className="text-5xl mb-3">👆</div>
                                     <h3 className="font-bold text-gray-700 mb-1">Pilih Guru</h3>
-                                    <p className="text-gray-500 text-sm">Pilih nama guru dari dropdown untuk melihat senarai tugas</p>
+                                    <p className="text-gray-500 text-sm">Pilih nama dari dropdown untuk lihat tugas</p>
                                 </div>
                             )}
                         </div>
