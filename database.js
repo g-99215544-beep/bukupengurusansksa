@@ -378,12 +378,14 @@ async function applyHighlightOnRenderedPage(pageNum, page, viewport, holder){
       if (!str) continue;
       const partKey = normalizeForMatch(str);
 
-      // highlight if exact token match or strong substring match
+      // highlight if exact token match or strong substring match (lebih tahan typo)
       let match = false;
       if (tokensSet.has(partKey)) match = true;
       else{
-        for (const t of matchedAlias.tokens){
-          if (t.length >= 4 && (partKey.includes(t) || t.includes(partKey))) { match = true; break; }
+        for (const t of (matchedAlias.tokens || [])){
+          if (!t) continue;
+          if (t.length >= 3 && (partKey === t || partKey.includes(t) || t.includes(partKey))) { match = true; break; }
+          if (t.length >= 5 && !LONG_MATCH_EXCLUDE.has(t) && partKey.includes(t)) { match = true; break; }
         }
       }
       if (!match) continue;
