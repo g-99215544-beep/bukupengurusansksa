@@ -727,6 +727,25 @@
                     }
                 });
                 
+                // Cari dalam takwim/event
+                Object.entries(takwimData).forEach(([dateStr, events]) => {
+                    events.forEach(event => {
+                        if (event.event.toUpperCase().includes(query)) {
+                            const date = new Date(dateStr);
+                            const dayName = DAYS_MS[date.getDay()];
+                            const monthName = MONTHS_MS[date.getMonth()];
+                            results.push({ 
+                                type: 'takwim', 
+                                label: event.event, 
+                                sublabel: `${date.getDate()} ${monthName} ${date.getFullYear()} (${dayName})`,
+                                date: dateStr,
+                                eventType: event.type,
+                                color: event.color
+                            });
+                        }
+                    });
+                });
+                
                 setSearchResults(results.slice(0, 10)); // Limit 10 results
                 setShowSearchResults(results.length > 0);
             }, [searchQuery]);
@@ -917,6 +936,14 @@
                     setActiveTab('buku');
                     scrollToPage(result.page);
                     toast(result.label);
+                } else if (result.type === 'takwim') {
+                    // Navigate ke takwim tab dan pilih tarikh
+                    const date = new Date(result.date);
+                    setCalendarMonth(date.getMonth());
+                    setCalendarYear(date.getFullYear());
+                    setSelectedDate(result.date);
+                    setActiveTab('takwim');
+                    toast(`📅 ${result.label}`);
                 }
             };
 
@@ -982,7 +1009,7 @@
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onFocus={() => searchQuery.length >= 2 && setShowSearchResults(true)}
-                                placeholder="🔍 Cari nama/jawatan..."
+                                placeholder="🔍 Cari nama/event..."
                                 className="w-full px-3 py-1.5 rounded-lg text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
                             />
                             
@@ -996,13 +1023,19 @@
                                             className="w-full text-left p-3 hover:bg-indigo-50 flex items-center gap-3 border-b border-gray-100 last:border-0"
                                         >
                                             <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm"
-                                                style={{ backgroundColor: result.type === 'section' ? '#6366f1' : (categoryConfig[result.category]?.color || '#8b5cf6') }}>
-                                                {result.type === 'guru' ? '👤' : result.type === 'section' ? result.icon : '📋'}
+                                                style={{ backgroundColor: result.type === 'takwim' ? (result.color || '#8b5cf6') : result.type === 'section' ? '#6366f1' : (categoryConfig[result.category]?.color || '#8b5cf6') }}>
+                                                {result.type === 'guru' ? '👤' : result.type === 'section' ? result.icon : result.type === 'takwim' ? '📅' : '📋'}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="font-medium text-gray-800 text-sm truncate">{result.label}</div>
-                                                <div className="text-xs text-gray-500 truncate">{result.sublabel} • m/s {result.page}</div>
+                                                <div className="text-xs text-gray-500 truncate">
+                                                    {result.sublabel}
+                                                    {result.type !== 'takwim' && ` • m/s ${result.page}`}
+                                                </div>
                                             </div>
+                                            {result.type === 'takwim' && (
+                                                <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-600 font-medium">Takwim</span>
+                                            )}
                                         </button>
                                     ))}
                                 </div>
